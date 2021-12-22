@@ -86,8 +86,9 @@ class TextClassificationTrainer:
                     loss += fed_prox_reg
 
                 current_loss = loss.item()
-                logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (epoch, batch_idx,
-                                                                           len(self.train_dl) - 1, current_loss))
+                if batch_idx % 10 == 0:
+                    logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (
+                    epoch, batch_idx, len(self.train_dl) - 1, current_loss))
 
                 if self.args.gradient_accumulation_steps > 1:
                     loss = loss / self.args.gradient_accumulation_steps
