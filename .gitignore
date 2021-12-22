@@ -1,0 +1,28 @@
+.DS_Store
+.idea
+.idea/*
+.vscode/*
+
+*.pyc
+./*/*.pyc
+./*/*/*.pyc
+./*/*/*/*.pyc
+./*/*/*/*/*.pyc
+./*/*/*/*/*/*.pyc
+
+*.log
+
+data/store/
+cache/
+
+# *.txt
+*.h5
+
+# data
+*.rar
+*.csv
+*.dat
+*.tar.gz
+*.zip
+*.json
+*.png
