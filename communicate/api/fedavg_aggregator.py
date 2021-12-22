@@ -34,7 +34,7 @@ class FedAVGAggregator(object):
         for i in range(0, len(model_path_list)):
             local_sample_number = sample_num_list[i]
             local_model_params = torch.load(model_path_list[i])
-            # os.remove(model_path_list[i])
+            os.remove(model_path_list[i])
             w = local_sample_number / training_num
 
             # logging.info('client %d' % (i))

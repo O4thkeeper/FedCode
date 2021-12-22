@@ -12,9 +12,6 @@
 
 *.log
 
-data/store/*
-cache/*
-
 # *.txt
 *.h5
 
