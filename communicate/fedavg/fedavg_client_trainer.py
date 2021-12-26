@@ -1,4 +1,4 @@
-class FedAVGTrainer(object):
+class FedAVGClientTrainer(object):
 
     def __init__(self, train_loader_list, train_data_num_list, test_loader_list, device, args, model_trainer):
 

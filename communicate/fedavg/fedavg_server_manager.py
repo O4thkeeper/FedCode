@@ -15,10 +15,6 @@ class FedAVGServerManager():
             client_indexes = self.aggregator.client_sampling(round, self.client_num, self.args.client_num_per_round)
             current_model = self.aggregator.get_global_model_params()
 
-            # logging.info("cur round global weights")
-            # for idx, param in enumerate(current_model):
-            #     logging.info("%s:%s" % (param, current_model[param][:2]))
-
             model_path_list, sample_num_list = self.clients.train(client_indexes, current_model)
             global_model_params = self.aggregator.aggregate(model_path_list, sample_num_list)
             self.aggregator.test_on_server_for_all_clients(round)

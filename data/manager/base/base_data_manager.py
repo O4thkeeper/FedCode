@@ -55,16 +55,12 @@ class BaseDataManager(ABC):
             partition_method = self.args.partition_method
             train_index_list = []
             test_index_list = []
-            for client_idx in tqdm(
-                    partition_file[partition_method]
-                    ["partition_data"].keys(),
-                    desc="Loading index from h5 file."):
+            for client_idx in tqdm(partition_file[partition_method]["partition_data"].keys(),
+                                   desc="Loading index from h5 file."):
                 train_index_list.extend(
-                    partition_file[partition_method]["partition_data"]
-                    [client_idx]["train"][()][:cut_off])
+                    partition_file[partition_method]["partition_data"][client_idx]["train"][()][:cut_off])
                 test_index_list.extend(
-                    partition_file[partition_method]["partition_data"]
-                    [client_idx]["test"][()][:cut_off])
+                    partition_file[partition_method]["partition_data"][client_idx]["test"][()][:cut_off])
             train_data = self.read_instance_from_h5(data_file, train_index_list)
             test_data = self.read_instance_from_h5(data_file, test_index_list)
             data_file.close()

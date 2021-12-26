@@ -7,13 +7,8 @@ from data.manager.text_classification_data_manager import TextClassificationData
 from data.preprocess.text_classification_preprocessor import TLMPreprocessor
 from main.initialize import set_seed, create_model, add_federated_args, get_fl_algorithm_initializer
 from model.model_args import ClassificationArgs
-from train.fed_trainer_transformer import FedTransformerTrainer
+from train.base.fed_trainer import FedTransformerTrainer
 from train.tc_transformer_trainer import TextClassificationTrainer
-
-# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
-# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../")))
-# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../")))
-# sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "../../../../")))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

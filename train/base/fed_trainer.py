@@ -4,7 +4,7 @@ import time
 
 import torch
 
-from train.base.model_trainer import ModelTrainer
+from train.base.abstract_trainer import ModelTrainer
 
 
 class FedTransformerTrainer(ModelTrainer):
@@ -20,13 +20,13 @@ class FedTransformerTrainer(ModelTrainer):
     def set_model_params(self, model_parameters):
         self.model.load_state_dict(model_parameters)
 
-    def save_model_params(self):
-        filename = os.path.join('cache', str(time.time()))
+    def save_model_params(self, filename=None):
+        filename = os.path.join('cache', str(time.time())) if filename is None else filename
         torch.save(self.get_model_params(), filename)
         return filename
 
     def train(self, train_data, device, args=None):
-        logging.info("Client(%d)" % self.id + ":| Local Train Data Size = %d" % (len(train_data)))
+        logging.info("Client %d" % self.id + ":| Local Train Data Size = %d" % (len(train_data)))
         self.model_trainer.train_dl = train_data
         self.model_trainer.train_model(device=device)
         logging.info("Client %d train model finished" % self.id)

@@ -13,25 +13,25 @@ from data.preprocess.utils.text_classification_utils import convert_examples_to_
 customized_cleaner_dict = {}
 
 
-class TrivialPreprocessor(BasePreprocessor):
-    # Used for models such as LSTM, CNN, etc.
-    def __init__(self, **kwargs):
-        super(TrivialPreprocessor, self).__init__(kwargs)
-        self.text_cleaner = customized_cleaner_dict.get(self.args.dataset, None)
-
-    def transform(self, X, y):
-        transformed_X = list()
-        transformed_y = list()
-        for i, single_x in enumerate(X):
-            if self.text_cleaner:
-                single_x = self.text_cleaner(single_x)
-            x_tokens = [token.text.strip().lower() for token in self.tokenizer(single_x.strip()) if token.text.strip()]
-            x_token_ids = [self.word_vocab[token] if token in self.word_vocab else self.word_vocab["<UNK>"] for token in
-                           x_tokens]
-            transformed_X.append(x_token_ids)
-            transformed_y.append(self.label_vocab[y[i]])
-        return transformed_X, transformed_y
-
+# class TrivialPreprocessor(BasePreprocessor):
+#     # Used for models such as LSTM, CNN, etc.
+#     def __init__(self, **kwargs):
+#         super(TrivialPreprocessor, self).__init__(kwargs)
+#         self.text_cleaner = customized_cleaner_dict.get(self.args.dataset, None)
+#
+#     def transform(self, X, y):
+#         transformed_X = list()
+#         transformed_y = list()
+#         for i, single_x in enumerate(X):
+#             if self.text_cleaner:
+#                 single_x = self.text_cleaner(single_x)
+#             x_tokens = [token.text.strip().lower() for token in self.tokenizer(single_x.strip()) if token.text.strip()]
+#             x_token_ids = [self.word_vocab[token] if token in self.word_vocab else self.word_vocab["<UNK>"] for token in
+#                            x_tokens]
+#             transformed_X.append(x_token_ids)
+#             transformed_y.append(self.label_vocab[y[i]])
+#         return transformed_X, transformed_y
+#
 
 class TLMPreprocessor(BasePreprocessor):
     # Used for Transformer language models (TLMs) such as BERT, RoBERTa, etc.

@@ -16,7 +16,7 @@ from transformers import (
     BartTokenizer,
 )
 
-from communicate.api.fedavg_api import FedML_FedAvg_distributed
+from communicate.fedavg.fedavg_api import FedML_FedAvg_distributed
 from model.bert_model import BertForSequenceClassification
 from model.distilbert_model import DistilBertForSequenceClassification
 
@@ -89,13 +89,11 @@ def add_federated_args(parser):
     # Data related
     parser.add_argument('--dataset', type=str, default='agnews', metavar='N',help='dataset used for training')
 
-    parser.add_argument(
-        '--data_file_path', type=str,
+    parser.add_argument('--data_file_path', type=str,
         default='/home/bill/fednlp_data/data_files/agnews_data.h5',
         help='data h5 file path')
 
-    parser.add_argument(
-        '--partition_file_path', type=str,
+    parser.add_argument('--partition_file_path', type=str,
         default='/home/bill/fednlp_data/partition_files/agnews_partition.h5',
         help='partition h5 file path')
 
@@ -153,6 +151,119 @@ def add_federated_args(parser):
 
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
                         help='learning rate on the client (default: 0.001)')
+
+    parser.add_argument('--weight_decay', type=float, default=0, metavar='N',
+                        help='L2 penalty')
+
+    parser.add_argument('--server_optimizer', type=str, default='sgd',
+                        help='Optimizer used on the server. This field can be the name of any subclass of the torch Opimizer class.')
+
+    parser.add_argument('--server_lr', type=float, default=0.1,
+                        help='server learning rate (default: 0.001)')
+
+    parser.add_argument('--server_momentum', type=float, default=0,
+                        help='server momentum (default: 0)')
+
+    parser.add_argument('--fedprox_mu', type=float, default=1,
+                        help='server momentum (default: 1)')
+
+    parser.add_argument(
+        '--evaluate_during_training_steps', type=int, default=100, metavar='EP',
+        help='the frequency of the evaluation during training')
+
+    parser.add_argument('--frequency_of_the_test', type=int, default=1,
+                        help='the frequency of the algorithms')
+
+    # cached related
+    parser.add_argument('--cache_dir', type=str, default="cache/", metavar='N',
+                        help='cache file path')
+
+    # freeze related
+    parser.add_argument('--freeze_layers', type=str, default='', metavar='N',
+                        help='freeze which layers')
+
+    return parser
+
+def add_code_search_args(parser):
+    """
+    parser : argparse.ArgumentParser
+    return a parser added with args required by fit
+    """
+
+    parser.add_argument("--is_debug_mode", default=0, type=int,
+                        help="is_debug_mode")
+
+    # Data related
+    parser.add_argument('--dataset', type=str, default='agnews', metavar='N',help='dataset used for training')
+
+    parser.add_argument('--data_file_path', type=str,
+        default='/home/bill/fednlp_data/data_files/agnews_data.h5',
+        help='data h5 file path')
+
+    parser.add_argument('--partition_file_path', type=str,
+        default='/home/bill/fednlp_data/partition_files/agnews_partition.h5',
+        help='partition h5 file path')
+
+    parser.add_argument('--partition_method', type=str, default='uniform',
+                        help='partition method')
+
+    # Model related
+    parser.add_argument('--model_type', type=str, default='roberta', metavar='N',
+                        help='transformer model type')
+    parser.add_argument('--model_name', type=str, default='bert-base-uncased', metavar='N',
+                        help='transformer model name')
+    parser.add_argument('--do_lower_case', type=bool, default=True, metavar='N',
+                        help='transformer model name')
+
+    # Learning related
+    parser.add_argument('--train_batch_size', type=int, default=64, metavar='N',
+                        help='input batch size for training (default: 8)')
+    parser.add_argument('--eval_batch_size', type=int, default=32, metavar='N',
+                        help='input batch size for evaluation (default: 8)')
+
+    parser.add_argument('--max_seq_length', type=int, default=200, metavar='N',
+                        help='maximum sequence length (default: 128)')
+
+    parser.add_argument('--fp16', default=False, action="store_true",
+                        help='if enable fp16 for training')
+
+    parser.add_argument('--manual_seed', type=int, default=42, metavar='N',
+                        help='random seed')
+
+    # IO related
+    parser.add_argument('--output_dir', type=str, default="tmp/", metavar='N',
+                        help='path to save the trained results and ckpts')
+
+    # Federated Learning related
+    parser.add_argument('--fl_algorithm', type=str, default="FedAvg",
+                        help='Algorithm list: FedAvg; FedOPT; FedProx ')
+
+    parser.add_argument('--comm_round', type=int, default=10,
+                        help='how many round of communications we shoud use')
+
+    parser.add_argument('--client_num_in_total', type=int, default=-1, metavar='NN',
+                        help='number of clients in a distributed cluster')
+
+    parser.add_argument('--client_num_per_round', type=int,
+                        default=4, metavar='NN', help='number of workers')
+
+    parser.add_argument('--epochs', type=int, default=3, metavar='EP',
+                        help='how many epochs will be trained locally')
+
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=1, metavar='EP',
+                        help='how many steps for accumulate the loss.')
+
+    parser.add_argument('--client_optimizer', type=str, default='adam',
+                        help='Optimizer used on the client. This field can be the name of any subclass of the torch Opimizer class.')
+
+    parser.add_argument('--learning_rate', type=float, default=5e-5, metavar='LR',
+                        help='learning rate on the client (default: 0.001)')
+
+    parser.add_argument('--adam_epsilon', type=float, default=1e-8, metavar='LR',
+                        help='')
+
+    parser.add_argument('--warmup_ratio', type=float, default=0.06, metavar='LR',
+                        help='')
 
     parser.add_argument('--weight_decay', type=float, default=0, metavar='N',
                         help='L2 penalty')

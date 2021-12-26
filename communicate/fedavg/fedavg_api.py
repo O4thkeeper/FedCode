@@ -1,7 +1,7 @@
-from communicate.api.fedavg_aggregator import FedAVGAggregator
-from communicate.api.fedavg_client_manager import FedAVGClientManager
-from communicate.api.fedavg_server_manager import FedAVGServerManager
-from communicate.api.fedavg_trainer import FedAVGTrainer
+from communicate.fedavg.fedavg_aggregator import FedAVGAggregator
+from communicate.fedavg.fedavg_client_manager import FedAVGClientManager
+from communicate.fedavg.fedavg_server_manager import FedAVGServerManager
+from communicate.fedavg.fedavg_client_trainer import FedAVGClientTrainer
 
 
 def FedML_FedAvg_distributed(server):
@@ -17,6 +17,6 @@ def init_server(clients, train_loader, test_loader, args, device, model_trainer)
 
 
 def init_client(train_loader_list, train_data_num_list, test_loader_list, device, args, model_trainer):
-    trainer = FedAVGTrainer(train_loader_list, train_data_num_list, test_loader_list, device, args, model_trainer)
+    trainer = FedAVGClientTrainer(train_loader_list, train_data_num_list, test_loader_list, device, args, model_trainer)
     client_manager = FedAVGClientManager(args, trainer)
     return client_manager

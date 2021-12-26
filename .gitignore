@@ -3,6 +3,9 @@
 .idea/*
 .vscode/*
 
+cache/*
+data/store/*
+
 *.pyc
 ./*/*.pyc
 ./*/*/*.pyc

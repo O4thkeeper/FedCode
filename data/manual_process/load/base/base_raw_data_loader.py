@@ -4,24 +4,8 @@ import json
 import numpy as np
 from tqdm import tqdm
 
-class BaseRawDataLoader(ABC):
-    @abstractmethod
-    def __init__(self, data_path):
-        self.data_path = data_path
-        self.attributes = dict()
-        self.attributes["index_list"] = None
+from data.manual_process.load.base.abstract_data_loader import BaseRawDataLoader
 
-    @abstractmethod
-    def load_data(self):
-        pass
-
-    @abstractmethod
-    def process_data_file(self, file_path):
-        pass
-
-    @abstractmethod
-    def generate_h5_file(self, file_path):
-        pass
 
 class TextClassificationRawDataLoader(BaseRawDataLoader):
     def __init__(self, data_path):
