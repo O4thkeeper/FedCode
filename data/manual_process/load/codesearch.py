@@ -89,7 +89,8 @@ def add_args(parser):
     return args
 
 
-language_list = ['go', 'java', 'javascript', 'php', 'python', 'ruby']
+# language_list = ['go', 'java', 'javascript', 'php', 'python', 'ruby']
+language_list = ['python']
 if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger()
