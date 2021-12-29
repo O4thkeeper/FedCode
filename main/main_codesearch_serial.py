@@ -63,5 +63,5 @@ if __name__ == "__main__":
     trainer = CodeSearchTrainer(args, device, model, loader)
     trainer.train()
 
-    model.save_pretrained('cache')
-    tokenizer.save_pretrained('cache')
+    model.save_pretrained('cache/model')
+    tokenizer.save_pretrained('cache/model')

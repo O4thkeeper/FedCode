@@ -107,7 +107,7 @@ class CodeSearchTrainer:
                 # else:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-                if step % 20 == 0:
+                if step % 100 == 0:
                     logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (
                         idx, step, len(self.train_dl) - 1, loss))
 

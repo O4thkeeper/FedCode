@@ -259,13 +259,16 @@ def add_code_search_args(parser):
     parser.add_argument('--learning_rate', type=float, default=5e-5, metavar='LR',
                         help='learning rate on the client (default: 0.001)')
 
-    parser.add_argument('--adam_epsilon', type=float, default=1e-8, metavar='LR',
+    parser.add_argument('--max_grad_norm', type=float, default=1.0, metavar='MGN',
+                        help='learning rate on the client (default: 0.001)')
+
+    parser.add_argument('--adam_epsilon', type=float, default=1e-8, metavar='AE',
                         help='')
 
-    parser.add_argument('--warmup_ratio', type=float, default=0.06, metavar='LR',
+    parser.add_argument('--warmup_ratio', type=float, default=0.06, metavar='WR',
                         help='')
 
-    parser.add_argument('--weight_decay', type=float, default=0, metavar='N',
+    parser.add_argument('--weight_decay', type=float, default=0, metavar='WD',
                         help='L2 penalty')
 
     parser.add_argument('--server_optimizer', type=str, default='sgd',
