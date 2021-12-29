@@ -41,6 +41,7 @@ if __name__ == "__main__":
     config = config_class.from_pretrained('microsoft/codebert-base', num_labels=2, finetuning_task='codesearch')
     tokenizer = tokenizer_class.from_pretrained('roberta-base')
     model = model_class.from_pretrained('microsoft/codebert-base', config=config)
+    model.to(device)
 
     # data
     preprocessor = CodeSearchPreprocessor(args=model_args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
