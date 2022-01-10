@@ -184,6 +184,7 @@ def add_federated_args(parser):
 
     return parser
 
+
 def add_code_search_args(parser):
     """
     parser : argparse.ArgumentParser
@@ -194,41 +195,45 @@ def add_code_search_args(parser):
                         help="is_debug_mode")
 
     # Data related
-    parser.add_argument('--dataset', type=str, default='agnews', metavar='N',help='dataset used for training')
+    parser.add_argument('--dataset', type=str, default='agnews', metavar='N', help='dataset used for training')
 
-    parser.add_argument('--data_file_path', type=str,
-        default='/home/bill/fednlp_data/data_files/agnews_data.h5',
-        help='data h5 file path')
+    parser.add_argument('--data_file', type=str,
+                        default='data/store/codesearch/python_train.h5',
+                        help='data h5 file path')
 
-    parser.add_argument('--partition_file_path', type=str,
-        default='/home/bill/fednlp_data/partition_files/agnews_partition.h5',
-        help='partition h5 file path')
+    parser.add_argument('--partition_file', type=str,
+                        default='data/store/codesearch/python_train_partition.h5',
+                        help='partition h5 file path')
 
-    parser.add_argument('--partition_method', type=str, default='uniform',
-                        help='partition method')
+    parser.add_argument('--partition_method', type=str, help='partition method')
+
+    parser.add_argument('--data_type', type=str,
+                        default='train',
+                        help='train or test')
 
     # Model related
-    parser.add_argument('--model_type', type=str, default='roberta', metavar='N',
+    parser.add_argument('--model_type', type=str, default='roberta-base', metavar='N',
                         help='transformer model type')
-    parser.add_argument('--model_name', type=str, default='bert-base-uncased', metavar='N',
+
+    parser.add_argument('--model_name', type=str, default='microsoft/codebert-base', metavar='N',
                         help='transformer model name')
+
     parser.add_argument('--do_lower_case', type=bool, default=True, metavar='N',
                         help='transformer model name')
 
     # Learning related
     parser.add_argument('--train_batch_size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 8)')
+
     parser.add_argument('--eval_batch_size', type=int, default=32, metavar='N',
                         help='input batch size for evaluation (default: 8)')
 
     parser.add_argument('--max_seq_length', type=int, default=200, metavar='N',
-                        help='maximum sequence length (default: 128)')
+                        help='maximum sequence length (default: 200)')
 
-    parser.add_argument('--fp16', default=False, action="store_true",
-                        help='if enable fp16 for training')
+    parser.add_argument('--fp16', default=False, action="store_true", help='if enable fp16 for training')
 
-    parser.add_argument('--manual_seed', type=int, default=42, metavar='N',
-                        help='random seed')
+    parser.add_argument('--manual_seed', type=int, default=42, metavar='N', help='random seed')
 
     # IO related
     parser.add_argument('--output_dir', type=str, default="tmp/", metavar='N',

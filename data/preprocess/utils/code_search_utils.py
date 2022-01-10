@@ -98,11 +98,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         else:
             raise KeyError(output_mode)
 
-        if ex_index < 5:
-            logging.info("*** Example ***")
+        if ex_index == 0:
+            logging.info("****** Example ******")
             logging.info("guid: %s" % (example.guid))
-            logging.info("tokens: %s" % " ".join(
-                [str(x) for x in tokens]))
+            logging.info("tokens: %s" % " ".join([str(x) for x in tokens]))
             logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
             logging.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
             logging.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
@@ -114,7 +113,6 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
                           segment_ids=segment_ids,
                           label_id=label_id))
     return features
-
 
 
 def _truncate_seq_pair(tokens_a, tokens_b, max_length):

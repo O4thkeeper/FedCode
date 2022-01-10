@@ -7,7 +7,7 @@ class FedAVGClientManager():
         self.trainer = trainer
 
     def train(self, client_indexes, current_model):
-        model_path_list = []
+        model_params_list = []
         sample_num_list = []
         for index in client_indexes:
 
@@ -16,7 +16,7 @@ class FedAVGClientManager():
             #     logging.info("%s:%s" % (param, current_model[param][:20]))
             #     break
 
-            path, local_sample_num = self.trainer.train(index, current_model)
-            model_path_list.append(path)
+            model_params, local_sample_num = self.trainer.train(index, current_model)
+            model_params_list.append(model_params)
             sample_num_list.append(local_sample_num)
-        return model_path_list, sample_num_list
+        return model_params_list, sample_num_list

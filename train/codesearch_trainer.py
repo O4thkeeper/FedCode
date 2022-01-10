@@ -2,6 +2,8 @@ import logging
 import math
 import os
 import time
+from collections import OrderedDict
+
 import torch
 from tqdm import tqdm, trange
 import numpy as np
@@ -17,6 +19,7 @@ class CodeSearchTrainer:
         self.set_data(train_dl, valid_dl, test_dl)
 
         self.model = model
+        self.global_model_params = model.state_dict()
 
         self.results = {}
         self.best_accuracy = 0.0
@@ -27,6 +30,21 @@ class CodeSearchTrainer:
         self.train_dl = train_dl
         self.valid_dl = valid_dl
         self.test_dl = test_dl
+
+    def get_model_params(self):
+        params = OrderedDict()
+        for key, value in self.model.items():
+            params[key] = value.clone().detach()
+        return params
+
+    def set_model_params(self, model_parameters):
+        self.model.load_state_dict(model_parameters)
+
+    def set_global_model_params(self, params):
+        self.global_model_params = params
+
+    def get_global_model_params(self):
+        return self.global_model_params
 
     def train(self):
         """ Train the model """

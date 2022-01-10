@@ -86,6 +86,18 @@ def main():
                         metavar="B",
                         help="beta value for quantity skew")
 
+    parser.add_argument("--min_size",
+                        type=int,
+                        default=100,
+                        metavar="MS",
+                        help="min size for every client")
+
+    parser.add_argument("--mode",
+                        type=int,
+                        default=1,
+                        metavar="M",
+                        help="1 for train and 2 for test data")
+
     args = parser.parse_args()
     print("start reading data")
     client_num = args.client_number
@@ -94,69 +106,55 @@ def main():
     data = h5py.File(args.data_file, "r")
     attributes = json.loads(data["attributes"][()])
     total_index_len = len(attributes["index_list"])
-    train_index_list = []
-    test_index_list = []
-
-    label_list = attributes["index_list"]
-    if "train_index_list" in attributes:
-        test_index_list = attributes["test_index_list"]
+    train = True if args.mode == 1 else False
+    if train:
         train_index_list = attributes["train_index_list"]
     else:
-        train_length = int(total_index_len * 0.9)
-        train_index_list = label_list[0:train_length]
-        test_index_list = label_list[train_length:]
+        test_index_list = attributes["test_index_list"]
 
-    min_size_test = 0
-    min_size_train = 0
+    label_list = attributes["index_list"]
 
+    min_size = 0
     print("start dirichlet distribution")
-    while min_size_test < 10 or min_size_train < 10:
-        partition_result_train = [[] for _ in range(client_num)]
-        partition_result_test = [[] for _ in range(client_num)]
-        train_n = len(train_index_list)
-        test_n = len(test_index_list)
-        partition_result_train = partition_class_samples_with_dirichlet_distribution(
-            train_n, beta, client_num, partition_result_train,
-            train_index_list)
-        partition_result_test = partition_class_samples_with_dirichlet_distribution(
-            test_n, beta, client_num, partition_result_test,
-            test_index_list)
-        min_size_train = min([len(i) for i in partition_result_train])
-        min_size_test = min([len(i) for i in partition_result_test])
-
-    print("minsize of the train data",
-          min([len(i) for i in partition_result_train]))
-    print("minsize of the test data",
-          min([len(i) for i in partition_result_test]))
+    while min_size < args.min_size:
+        if train:
+            partition_result_train = [[] for _ in range(client_num)]
+            train_n = len(train_index_list)
+            partition_result_train = partition_class_samples_with_dirichlet_distribution(
+                train_n, beta, client_num, partition_result_train,
+                train_index_list)
+            min_size = min([len(i) for i in partition_result_train])
+        else:
+            partition_result_test = [[] for _ in range(client_num)]
+            test_n = len(test_index_list)
+            partition_result_test = partition_class_samples_with_dirichlet_distribution(
+                test_n, beta, client_num, partition_result_test,
+                test_index_list)
+            min_size = min([len(i) for i in partition_result_test])
+    if train:
+        print("minsize of the train data", min([len(i) for i in partition_result_train]))
+    else:
+        print("minsize of the test data", min([len(i) for i in partition_result_test]))
     data.close()
 
     print("store data in h5 data")
-    partition = h5py.File(args.partition_file, "a")
+    partition = h5py.File(args.partition_file, "w")
 
-    if ("/niid_quantity_clients_%d_beta=%.1f" % (args.client_number, args.beta)
-            in partition):
-        del partition["/niid_quantity_clients_%d_beta=%.1f" %
-                      (args.client_number, args.beta)]
-    if ("/niid_quantity_clients=%d_beta=%.1f" % (args.client_number, args.beta)
-            in partition):
-        del partition["/niid_quantity=clients_%d_beta=%.1f" %
-                      (args.client_number, args.beta)]
-
-    partition["/niid_quantity_clients=%d_beta=%.1f" %
-              (args.client_number, args.beta) + "/n_clients"] = client_num
-    partition["/niid_quantity_clients=%d_beta=%.1f" %
-              (args.client_number, args.beta) + "/beta"] = beta
+    partition["/niid_quantity_clients=%d_beta=%.1f" % (args.client_number, args.beta) + "/n_clients"] = client_num
+    partition["/niid_quantity_clients=%d_beta=%.1f" % (args.client_number, args.beta) + "/beta"] = beta
     for partition_id in range(client_num):
-        train = partition_result_train[partition_id]
-        test = partition_result_test[partition_id]
-        train_path = ("/niid_quantity_clients=%d_beta=%.1f" %
+        if train:
+            train = partition_result_train[partition_id]
+            train_path = ("/niid_quantity_clients=%d_beta=%.1f" %
                       (args.client_number, args.beta) + "/partition_data/" +
                       str(partition_id) + "/train/")
-        test_path = ("/niid_quantity_clients=%d_beta=%.1f" %
-                     (args.client_number, args.beta) + "/partition_data/" +
-                     str(partition_id) + "/test/")
-        partition[train_path] = train
-        partition[test_path] = test
+            partition[train_path] = train
+        else:
+            test = partition_result_test[partition_id]
+            test_path = ("/niid_quantity_clients=%d_beta=%.1f" %
+                         (args.client_number, args.beta) + "/partition_data/" +
+                         str(partition_id) + "/test/")
+            partition[test_path] = test
     partition.close()
 
 

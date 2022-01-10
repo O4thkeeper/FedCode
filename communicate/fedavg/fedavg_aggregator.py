@@ -15,26 +15,25 @@ class FedAVGAggregator(object):
         self.device = device
 
     def get_global_model_params(self):
-        return self.trainer.get_model_params()
+        return self.trainer.get_global_model_params()
 
     def set_global_model_params(self, model_parameters):
-        self.trainer.set_model_params(model_parameters)
+        self.trainer.set_global_model_params(model_parameters)
 
 
-    def aggregate(self, model_path_list, sample_num_list):
+    def aggregate(self, model_params_list, sample_num_list):
         start_time = time.time()
         training_num = sum(sample_num_list)
 
-        logging.info("len of self.model_path_list = " + str(len(model_path_list)))
+        logging.info("len of self.model_path_list = " + str(len(model_params_list)))
 
-        averaged_params = torch.load(model_path_list[0])
+        averaged_params = model_params_list[0]
         # for idx, param in enumerate(averaged_params):
         #     logging.info("%s:%s" % (param, averaged_params[param][:20]))
         #     break
-        for i in range(0, len(model_path_list)):
+        for i in range(0, len(model_params_list)):
             local_sample_number = sample_num_list[i]
-            local_model_params = torch.load(model_path_list[i])
-            os.remove(model_path_list[i])
+            local_model_params = model_params_list[i]
             w = local_sample_number / training_num
 
             # logging.info('client %d' % (i))
@@ -54,10 +53,10 @@ class FedAVGAggregator(object):
         end_time = time.time()
         logging.info("aggregate time cost: %d" % (end_time - start_time))
 
-        filename = os.path.join('cache', str(time.time()))
-        torch.save(averaged_params, filename)
+        # filename = os.path.join('cache', str(time.time()))
+        # torch.save(averaged_params, filename)
 
-        return averaged_params
+        # return averaged_params
 
     def client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:

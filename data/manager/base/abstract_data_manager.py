@@ -19,7 +19,6 @@ class AbstractDataManager(ABC):
         self.args = args
         self.batch_size = batch_size
 
-
     @staticmethod
     def load_attributes(data_path):
         data_file = h5py.File(data_path, "r", swmr=True)
@@ -107,7 +106,7 @@ class AbstractDataManager(ABC):
                 data = self.read_instance_from_h5(data_file, index_list,
                                                   desc=" train data of client_id=%d [_load_federated_data_local] " % idx)
 
-                examples, features, dataset = self.preprocessor.transform(**data, index_list=index_list)
+                examples, features, dataset = self.preprocessor.transform(**data)
 
                 with open(res, "wb") as handle:
                     pickle.dump((examples, features, dataset), handle)

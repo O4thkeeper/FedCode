@@ -1,7 +1,6 @@
 class FedAVGClientTrainer(object):
 
     def __init__(self, train_loader_list, train_data_num_list, test_loader_list, device, args, model_trainer):
-
         self.train_loader_list = train_loader_list
         self.train_data_num_list = train_data_num_list
         self.test_loader_list = test_loader_list
@@ -15,10 +14,10 @@ class FedAVGClientTrainer(object):
 
     def train(self, index, current_model):
         self.trainer.set_model_params(current_model)
-        self.trainer.train(self.train_loader_list[index], self.device, self.args)
-        path = self.trainer.save_model_params()
-
-        return path, self.train_data_num_list[index]
+        self.trainer.set_data(self.train_loader_list[index])
+        self.trainer.train()
+        model_params = self.trainer.get_model_params()
+        return model_params, self.train_data_num_list[index]
 
     def test(self):
         pass
