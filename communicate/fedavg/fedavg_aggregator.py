@@ -53,8 +53,8 @@ class FedAVGAggregator(object):
         end_time = time.time()
         logging.info("aggregate time cost: %d" % (end_time - start_time))
 
-        # filename = os.path.join('cache', str(time.time()))
-        # torch.save(averaged_params, filename)
+        filename = os.path.join('cache', str(time.time()))
+        torch.save(averaged_params, filename)
 
         # return averaged_params
 

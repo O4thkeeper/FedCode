@@ -2,14 +2,14 @@
 py=python
 
 ${py} -m main.codesearch_fedavg \
-  --client_num_in_total 3 \
-  --client_num_per_round 1 \
-  --comm_round 2 \
+  --client_num_in_total 15 \
+  --client_num_per_round 5 \
+  --comm_round 9 \
   --dataset "codesearch" \
   --data_file "data/store/codesearch/python_train.h5" \
   --data_type "train" \
   --partition_file "data/store/codesearch/python_train_partition.h5" \
-  --partition_method niid_quantity_clients=3_beta=1.0 \
+  --partition_method niid_quantity_clients=15_beta=1.0 \
   --fl_algorithm FedAvg \
   --model_type distilbert \
   --model_name distilbert-base-uncased \
@@ -19,5 +19,5 @@ ${py} -m main.codesearch_fedavg \
   --max_seq_length 200 \
   --learning_rate 5e-5 \
   --server_lr 0.1 \
-  --epochs 3 \
+  --epochs 1 \
   --output_dir "tmp/fedavg_codesearch_output/"

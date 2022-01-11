@@ -11,8 +11,8 @@ class FedAVGServerManager():
 
     def run(self):
         for round in range(self.round_num):
-            logging.info('round %d begin' % round)
             client_indexes = self.aggregator.client_sampling(round, self.client_num, self.args.client_num_per_round)
+            logging.info('round %d begin: sample client %s' % (round, str(client_indexes)))
             current_model = self.aggregator.get_global_model_params()
 
             model_params_list, sample_num_list = self.clients.train(client_indexes, current_model)

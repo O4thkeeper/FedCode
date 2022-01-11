@@ -11,10 +11,7 @@ class FedAVGClientManager():
         sample_num_list = []
         for index in client_indexes:
 
-            # logging.info('client %d' % (index))
-            # for idx, param in enumerate(current_model):
-            #     logging.info("%s:%s" % (param, current_model[param][:20]))
-            #     break
+            logging.info('client %d ready to train:' % (index))
 
             model_params, local_sample_num = self.trainer.train(index, current_model)
             model_params_list.append(model_params)
