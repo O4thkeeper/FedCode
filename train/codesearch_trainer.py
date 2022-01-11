@@ -19,7 +19,7 @@ class CodeSearchTrainer:
         self.set_data(train_dl, valid_dl, test_dl)
 
         self.model = model
-        self.global_model_params = model.state_dict()
+        self.global_model_params = self.model_params_copy(self.model)
 
         self.results = {}
         self.best_accuracy = 0.0
@@ -32,10 +32,7 @@ class CodeSearchTrainer:
         self.test_dl = test_dl
 
     def get_model_params(self):
-        params = OrderedDict()
-        for key, value in self.model.state_dict().items():
-            params[key] = value.clone().detach()
-        return params
+        return self.model_params_copy(self.model)
 
     def set_model_params(self, model_parameters):
         self.model.load_state_dict(model_parameters)
@@ -45,6 +42,12 @@ class CodeSearchTrainer:
 
     def get_global_model_params(self):
         return self.global_model_params
+
+    def model_params_copy(self,model):
+        result = OrderedDict()
+        for key, value in model.state_dict().items():
+            result[key] = value.clone().detach()
+        return result
 
     def train(self):
         """ Train the model """
@@ -126,8 +129,7 @@ class CodeSearchTrainer:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
                 if step % 100 == 0:
-                    logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (
-                        idx, step, len(self.train_dl) - 1, loss))
+                    logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (idx, step, len(self.train_dl) - 1, loss))
 
                 tr_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:

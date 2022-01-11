@@ -68,7 +68,7 @@ class FedAVGAggregator(object):
         logging.info("client_indexes = %s" % str(client_indexes))
         return client_indexes
 
-    def test_on_server_for_all_clients(self, round_idx):
-        if not self.trainer.test_on_the_server(self.device):
-            logging.info("round %d not tested all" % round_idx)
-        return
+    # def test_on_server_for_all_clients(self, round_idx):
+    #     if not self.trainer.test_on_the_server(self.device):
+    #         logging.info("round %d not tested all" % round_idx)
+    #     return
