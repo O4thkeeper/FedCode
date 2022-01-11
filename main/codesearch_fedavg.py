@@ -23,7 +23,7 @@ if __name__ == "__main__":
         datefmt='%Y-%m-%d,%H:%M:%S')
     logging.info(args)
 
-    # set_seed(args.manual_seed)
+    set_seed(args.manual_seed)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

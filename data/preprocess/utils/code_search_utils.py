@@ -1,5 +1,7 @@
 import logging
 
+from tqdm import tqdm
+
 from data.preprocess.base.base_feature import InputFeatures
 
 
@@ -20,9 +22,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
     label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
-    for (ex_index, example) in enumerate(examples):
-        if ex_index % 10000 == 0:
-            logging.info("Writing example %d of %d" % (ex_index, len(examples)))
+    for (ex_index, example) in tqdm(enumerate(examples), desc='convert examples to features '):
 
         tokens_a = tokenizer.tokenize(example.text_a)[:50]
 

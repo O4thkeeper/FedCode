@@ -33,7 +33,7 @@ class CodeSearchTrainer:
 
     def get_model_params(self):
         params = OrderedDict()
-        for key, value in self.model.items():
+        for key, value in self.model.state_dict().items():
             params[key] = value.clone().detach()
         return params
 

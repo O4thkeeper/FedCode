@@ -132,9 +132,9 @@ def main():
                 test_index_list)
             min_size = min([len(i) for i in partition_result_test])
     if train:
-        print("minsize of the train data", min([len(i) for i in partition_result_train]))
+        print("result: ", str(partition_result_train))
     else:
-        print("minsize of the test data", min([len(i) for i in partition_result_test]))
+        print("result: ", str(partition_result_test))
     data.close()
 
     print("store data in h5 data")
