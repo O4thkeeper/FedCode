@@ -7,8 +7,7 @@ from transformers import RobertaConfig, RobertaForSequenceClassification, Robert
 from data.manager.base.abstract_data_manager import AbstractDataManager
 from data.manager.code_search_data_manager import CodeSearchDataManager
 from data.preprocess.code_search_preprocessor import CodeSearchPreprocessor
-from main.initialize import set_seed, add_federated_args, add_code_search_args, get_fl_algorithm_initializer
-from model.model_args import ClassificationArgs
+from main.initialize import set_seed, add_code_search_args, get_fl_algorithm_initializer
 from train.codesearch_trainer import CodeSearchTrainer
 
 if __name__ == "__main__":
@@ -27,52 +26,55 @@ if __name__ == "__main__":
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # dataset attributes
-    attributes = AbstractDataManager.load_attributes('data/store/codesearch/python_train.h5')
-    num_labels = len(attributes["label_vocab"])
-
-    model_args = ClassificationArgs()
-    model_args.cache_dir = 'cache'
-    model_args.model_class = 'codesearch'
-    model_args.max_seq_length = 200
-    model_args.model_type = 'classification'
-
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
-    config = config_class.from_pretrained('microsoft/codebert-base', num_labels=2, finetuning_task='codesearch')
-    tokenizer = tokenizer_class.from_pretrained('roberta-base')
-    model = model_class.from_pretrained('microsoft/codebert-base', config=config)
-    model.to(device)
 
-    # data
-    preprocessor = CodeSearchPreprocessor(args=model_args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
-    mangager = CodeSearchDataManager(args, model_args, preprocessor, args.data_type, args.data_file,
-                                     args.train_batch_size, args.partition_file)
+    if args.do_train:
+        # dataset attributes
+        attributes = AbstractDataManager.load_attributes(args.data_file)
+        num_labels = len(attributes["label_vocab"])
 
-    # loader = mangager.load_centralized_data()
-    # load fed data
-    train_loader_list, train_data_num_list = mangager.load_federated_data(server=False)
+        config = config_class.from_pretrained(args.model_name, num_labels=num_labels, finetuning_task='codesearch')
+        tokenizer = tokenizer_class.from_pretrained(args.model_type)
+        model = model_class.from_pretrained(args.model_name, config=config)
+        model.to(device)
 
-    fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
-    server_func = fl_algorithm(server=True)
-    client_func = fl_algorithm(server=False)
+        # data
+        preprocessor = CodeSearchPreprocessor(args=args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
+        manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
+                                        args.train_batch_size, args.partition_file)
 
-    trainer = CodeSearchTrainer(args, device, model)
+        train_loader_list, train_data_num_list = manager.load_federated_data(server=False)
 
-    clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
-    server = server_func(clients, None, None, args, device, trainer)
-    server.run()
+        fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
+        server_func = fl_algorithm(server=True)
+        client_func = fl_algorithm(server=False)
 
-    # for step, batch in enumerate(loader):
-    #     if step > 3:
-    #         break
-    #     logging.info('step %d' % step)
-    #     logging.info(batch[0].shape)
-    #     # logging.info(batch[1])
-    #     # logging.info(batch[2])
-    #     # logging.info(batch[3])
-    #
-    #
-    # trainer.train()
-    #
-    model.save_pretrained('cache/model')
-    tokenizer.save_pretrained('cache/model')
+        trainer = CodeSearchTrainer(args, device, model)
+
+        clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
+        server = server_func(clients, None, None, args, device, trainer)
+        server.run()
+
+        model.save_pretrained('cache/model')
+        tokenizer.save_pretrained('cache/model')
+
+    if args.do_test:
+        # config = config_class.from_pretrained('cache/model/config.json', num_labels=num_labels,
+        #                                       finetuning_task='codesearch')
+        # tokenizer = tokenizer_class.from_pretrained('roberta-base')
+        # model = model_class.from_pretrained('cache/model/pytorch_model.bin', config=config)
+        config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
+        tokenizer = tokenizer_class.from_pretrained(args.model_type)
+        model = model_class.from_pretrained(args.model_name, config=config)
+        model.to(device)
+
+        preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
+        manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
+                                        args.train_batch_size, args.partition_file)
+        test_loader = manager.load_test_data()
+
+        fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
+        server_func = fl_algorithm(server=True)
+        trainer = CodeSearchTrainer(args, device, model)
+        server = server_func(None, None, test_loader, args, device, trainer)
+        server.test()

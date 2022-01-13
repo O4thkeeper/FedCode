@@ -20,26 +20,16 @@ class FedAVGAggregator(object):
     def set_global_model_params(self, model_parameters):
         self.trainer.set_global_model_params(model_parameters)
 
-
     def aggregate(self, model_params_list, sample_num_list):
-        start_time = time.time()
         training_num = sum(sample_num_list)
-
-        logging.info("len of self.model_path_list = " + str(len(model_params_list)))
-
+        logging.info("len of self.model_params_list = " + str(len(model_params_list)))
         averaged_params = model_params_list[0]
-        # for idx, param in enumerate(averaged_params):
-        #     logging.info("%s:%s" % (param, averaged_params[param][:20]))
-        #     break
         for i in range(0, len(model_params_list)):
             local_sample_number = sample_num_list[i]
             local_model_params = model_params_list[i]
             w = local_sample_number / training_num
 
-            # logging.info('client %d' % (i))
-            # for idx, param in enumerate(local_model_params):
-            #     logging.info("%s:%s" % (param, local_model_params[param][:20]))
-            #     break
+            logging.info('aggregate model of client %d with w %s' % (i, w))
 
             for k in averaged_params.keys():
                 if i == 0:
@@ -50,13 +40,8 @@ class FedAVGAggregator(object):
         # update the global model which is cached at the server side
         self.set_global_model_params(averaged_params)
 
-        end_time = time.time()
-        logging.info("aggregate time cost: %d" % (end_time - start_time))
-
         filename = os.path.join('cache', str(time.time()))
         torch.save(averaged_params, filename)
-
-        # return averaged_params
 
     def client_sampling(self, round_idx, client_num_in_total, client_num_per_round):
         if client_num_in_total == client_num_per_round:
@@ -68,7 +53,6 @@ class FedAVGAggregator(object):
         logging.info("client_indexes = %s" % str(client_indexes))
         return client_indexes
 
-    # def test_on_server_for_all_clients(self, round_idx):
-    #     if not self.trainer.test_on_the_server(self.device):
-    #         logging.info("round %d not tested all" % round_idx)
-    #     return
+    def test_on_server(self):
+        self.trainer.test()
+

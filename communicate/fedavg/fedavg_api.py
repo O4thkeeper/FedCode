@@ -9,7 +9,7 @@ def FedML_FedAvg_distributed(server):
 
 
 def init_server(clients, train_loader, test_loader, args, device, model_trainer):
-    model_trainer.set_data(train_loader, test_loader)
+    model_trainer.set_data(train_loader, None, test_loader)
     aggregator = FedAVGAggregator(model_trainer, args, device)
 
     server_manager = FedAVGServerManager(aggregator, clients, args)

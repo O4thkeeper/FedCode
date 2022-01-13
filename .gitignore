@@ -5,6 +5,7 @@
 
 cache/*
 data/store/*
+tmp/*
 
 *.pyc
 ./*/*.pyc

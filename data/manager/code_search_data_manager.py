@@ -4,9 +4,9 @@ from data.manager.base.abstract_data_manager import AbstractDataManager
 
 
 class CodeSearchDataManager(AbstractDataManager):
-    def __init__(self, args, model_args, preprocessor, data_type, data_path, batch_size, partition_path=None):
-        super(CodeSearchDataManager, self).__init__(args, model_args, data_type, data_path, batch_size, partition_path)
-        self.attributes = self.load_attributes(data_path)
+    def __init__(self, args, preprocessor, data_type, data_path, batch_size, partition_path=None):
+        super(CodeSearchDataManager, self).__init__(args, data_type, data_path, batch_size, partition_path)
+        # self.attributes = self.load_attributes(data_path)
         self.preprocessor = preprocessor
 
     def read_instance_from_h5(self, data_file, index_list=None, desc=""):

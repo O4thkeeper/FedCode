@@ -114,6 +114,82 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
                           label_id=label_id))
     return features
 
+# todo reconstruct
+def temp_convert_examples_to_features(examples, label_list, max_seq_length,
+                                 tokenizer, output_mode,
+                                 cls_token_at_end=False, pad_on_left=False,
+                                 cls_token='[CLS]', sep_token='[SEP]', pad_token=0,
+                                 sequence_a_segment_id=0, sequence_b_segment_id=1,
+                                 cls_token_segment_id=1, pad_token_segment_id=0,
+                                 mask_padding_with_zero=True):
+    label_map = {label: i for i, label in enumerate(label_list)}
+
+    features = []
+    for (ex_index, example) in tqdm(enumerate(examples), desc='convert examples to features '):
+
+        tokens_a = tokenizer.tokenize(example[0])[:50]
+
+        tokens_b = None
+        if example[1]:
+            tokens_b = tokenizer.tokenize(example[1])
+            _truncate_seq_pair(tokens_a, tokens_b, max_seq_length - 3)
+        else:
+            if len(tokens_a) > max_seq_length - 2:
+                tokens_a = tokens_a[:(max_seq_length - 2)]
+        tokens = tokens_a + [sep_token]
+        segment_ids = [sequence_a_segment_id] * len(tokens)
+
+        if tokens_b:
+            tokens += tokens_b + [sep_token]
+            segment_ids += [sequence_b_segment_id] * (len(tokens_b) + 1)
+
+        if cls_token_at_end:
+            tokens = tokens + [cls_token]
+            segment_ids = segment_ids + [cls_token_segment_id]
+        else:
+            tokens = [cls_token] + tokens
+            segment_ids = [cls_token_segment_id] + segment_ids
+
+        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+
+        padding_length = max_seq_length - len(input_ids)
+        if pad_on_left:
+            input_ids = ([pad_token] * padding_length) + input_ids
+            input_mask = ([0 if mask_padding_with_zero else 1] * padding_length) + input_mask
+            segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
+        else:
+            input_ids = input_ids + ([pad_token] * padding_length)
+            input_mask = input_mask + ([0 if mask_padding_with_zero else 1] * padding_length)
+            segment_ids = segment_ids + ([pad_token_segment_id] * padding_length)
+
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
+
+        if output_mode == "classification":
+            label_id = label_map[example[2]]
+        elif output_mode == "regression":
+            label_id = float(example[2])
+        else:
+            raise KeyError(output_mode)
+
+        if ex_index == 0:
+            logging.info("****** Example ******")
+            logging.info("tokens: %s" % " ".join([str(x) for x in tokens]))
+            logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
+            logging.info("input_mask: %s" % " ".join([str(x) for x in input_mask]))
+            logging.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
+            logging.info("label: %s (id = %d)" % (example[2], label_id))
+
+        features.append(
+            InputFeatures(input_ids=input_ids,
+                          input_mask=input_mask,
+                          segment_ids=segment_ids,
+                          label_id=label_id))
+    return features
+
 
 def _truncate_seq_pair(tokens_a, tokens_b, max_length):
     """Truncates a sequence pair in place to the maximum length."""

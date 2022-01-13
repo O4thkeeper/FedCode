@@ -11,11 +11,10 @@ from data.preprocess.base.base_data_loader import BaseDataLoader
 
 class AbstractDataManager(ABC):
     @abstractmethod
-    def __init__(self, args, model_args, data_type, data_path, batch_size, partition_path=None):
+    def __init__(self, args, data_type, data_path, batch_size, partition_path=None):
         self.data_path = data_path
         self.partition_path = partition_path
         self.data_type = data_type
-        self.model_args = model_args
         self.args = args
         self.batch_size = batch_size
 
@@ -126,24 +125,52 @@ class AbstractDataManager(ABC):
 
         return loader_list, data_num_list
 
+    def load_test_data(self):
+        state, res = self._load_data_loader_from_cache(-1, self.data_type)
+        if state:
+            examples, features, dataset = res
+        else:
+
+            # todo reconstruct
+            with open(self.data_path, "r", encoding='utf-8') as f:
+                lines = []
+                for line in f.readlines():
+                    line = line.strip().split('<CODESPLIT>')
+                    if len(line) != 3:
+                        continue
+                    lines.append(line)
+
+            raw_data = []
+            for (i, line) in enumerate(lines):
+                text_a = line[1]
+                text_b = line[2]
+                label = line[0]
+                raw_data.append((text_a, text_b, label))
+
+            examples, features, dataset = self.preprocessor.temp_transform(raw_data)
+            with open(res, "wb") as handle:
+                pickle.dump((examples, features, dataset), handle)
+        data_loader = BaseDataLoader(examples, features, dataset,
+                                     batch_size=self.batch_size,
+                                     num_workers=0,
+                                     pin_memory=True,
+                                     drop_last=False)
+
+        return data_loader
+
     def _load_data_loader_from_cache(self, client_id, data_type):
         """
         Different clients has different cache file. client_id = -1 means loading the cached file on server end.
         """
         args = self.args
-        model_args = self.model_args
-        if not os.path.exists(model_args.cache_dir):
-            os.mkdir(model_args.cache_dir)
-        cached_features_file = os.path.join(
-            model_args.cache_dir, args.model_type + "_" + args.model_name.split("/")[-1] + "_cached_" + str(
-                args.max_seq_length) + "_" + model_args.model_class + "_" + args.dataset + "_" + args.partition_method + "_" + str(
-                client_id) + "_" + data_type)
+        if not os.path.exists(args.cache_dir):
+            os.mkdir(args.cache_dir)
+        cached_features_file = os.path.join(args.cache_dir,
+                                            args.model_type + "_" + args.model_name.split("/")[-1] + "_cached_" + str(
+                                                args.max_seq_length) + "_" + args.dataset + "_" + args.partition_method + "_" + str(
+                                                client_id) + "_" + data_type)
 
         if os.path.exists(cached_features_file):
-            # and (
-            # (not model_args.reprocess_input_data and not model_args.no_cache)
-            # or (model_args.use_cached_eval_features and not model_args.no_cache)
-            # ):
             logging.info(" Loading features from cached file %s", cached_features_file)
             with open(cached_features_file, "rb") as handle:
                 examples, features, dataset = pickle.load(handle)

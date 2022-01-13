@@ -87,15 +87,15 @@ def add_federated_args(parser):
                         help="is_debug_mode")
 
     # Data related
-    parser.add_argument('--dataset', type=str, default='agnews', metavar='N',help='dataset used for training')
+    parser.add_argument('--dataset', type=str, default='agnews', metavar='N', help='dataset used for training')
 
     parser.add_argument('--data_file_path', type=str,
-        default='/home/bill/fednlp_data/data_files/agnews_data.h5',
-        help='data h5 file path')
+                        default='/home/bill/fednlp_data/data_files/agnews_data.h5',
+                        help='data h5 file path')
 
     parser.add_argument('--partition_file_path', type=str,
-        default='/home/bill/fednlp_data/partition_files/agnews_partition.h5',
-        help='partition h5 file path')
+                        default='/home/bill/fednlp_data/partition_files/agnews_partition.h5',
+                        help='partition h5 file path')
 
     parser.add_argument('--partition_method', type=str, default='uniform',
                         help='partition method')
@@ -207,9 +207,7 @@ def add_code_search_args(parser):
 
     parser.add_argument('--partition_method', type=str, help='partition method')
 
-    parser.add_argument('--data_type', type=str,
-                        default='train',
-                        help='train or test')
+    parser.add_argument('--data_type', type=str, default='train', help='train or test')
 
     # Model related
     parser.add_argument('--model_type', type=str, default='roberta-base', metavar='N',
@@ -231,7 +229,7 @@ def add_code_search_args(parser):
     parser.add_argument('--max_seq_length', type=int, default=200, metavar='N',
                         help='maximum sequence length (default: 200)')
 
-    parser.add_argument('--fp16', default=False, action="store_true", help='if enable fp16 for training')
+    parser.add_argument('--fp16', action="store_true", help='if enable fp16 for training')
 
     parser.add_argument('--manual_seed', type=int, default=42, metavar='N', help='random seed')
 
@@ -302,5 +300,12 @@ def add_code_search_args(parser):
     # freeze related
     parser.add_argument('--freeze_layers', type=str, default='', metavar='N',
                         help='freeze which layers')
+
+    # mode related
+    parser.add_argument('--do_train', action="store_true")
+
+    parser.add_argument('--do_test', action="store_true")
+
+    parser.add_argument('--test_mode', type=str, default='acc')
 
     return parser

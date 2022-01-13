@@ -9,6 +9,8 @@ from tqdm import tqdm, trange
 import numpy as np
 from transformers import get_linear_schedule_with_warmup, AdamW
 
+from utils.evaluate_utils import compute_metrics
+
 
 class CodeSearchTrainer:
     def __init__(self, args, device, model, train_dl=None, valid_dl=None, test_dl=None):
@@ -43,7 +45,7 @@ class CodeSearchTrainer:
     def get_global_model_params(self):
         return self.global_model_params
 
-    def model_params_copy(self,model):
+    def model_params_copy(self, model):
         result = OrderedDict()
         for key, value in model.state_dict().items():
             result[key] = value.clone().detach()
@@ -98,9 +100,6 @@ class CodeSearchTrainer:
         for idx in range(args.epochs):
             tr_loss = 0.0
             for step, batch in enumerate(self.train_dl):
-
-                if step % 500 == 0:
-                    logging.info("step: %d,time:%s", step, time.asctime(time.localtime(time.time())))
 
                 batch = tuple(t.to(self.device) for t in batch)
                 inputs = {'input_ids': batch[0],
@@ -282,6 +281,71 @@ class CodeSearchTrainer:
     #                     print("%s = %s" % (key, str(result[key])))
     #
     #     return results
+
+    def test(self):
+        results = {}
+        logging.info("***** Running Test *****")
+        # logging.info("  Num examples = %d", len(eval_dataset))
+        logging.info("  Batch size = %d", self.args.eval_batch_size)
+        eval_loss = 0.0
+        nb_eval_steps = 0
+        preds = None
+        out_label_ids = None
+        for batch in tqdm(self.test_dl, desc="Testing"):
+            self.model.eval()
+            batch = tuple(t.to(self.device) for t in batch)
+
+            with torch.no_grad():
+                inputs = {'input_ids': batch[0],
+                          'attention_mask': batch[1],
+                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
+                          # XLM don't use segment_ids
+                          'labels': batch[3]}
+
+                outputs = self.model(**inputs)
+                tmp_eval_loss, logits = outputs[:2]
+
+                eval_loss += tmp_eval_loss.mean().item()
+            nb_eval_steps += 1
+            if preds is None:
+                preds = logits.detach().cpu().numpy()
+                out_label_ids = inputs['labels'].detach().cpu().numpy()
+            else:
+                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
+        # eval_accuracy = accuracy(preds,out_label_ids)
+        eval_loss = eval_loss / nb_eval_steps
+        preds_label = np.argmax(preds, axis=1)
+        result = compute_metrics(preds_label, out_label_ids)
+        results.update(result)
+        # for acc test
+        if self.args.test_mode == 'acc':
+            if not os.path.exists(self.args.output_dir):
+                os.makedirs(self.args.output_dir)
+            output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
+            with open(output_test_file, "a+") as writer:
+                logging.info("***** Test results {} *****")
+                for key in sorted(result.keys()):
+                    logging.info("  %s = %s", key, str(result[key]))
+                    writer.write("%s = %s\n" % (key, str(result[key])))
+        # for mrr test
+        # elif (mode == 'mrr'):
+        #     output_test_file = args.test_result_dir
+        #     output_dir = os.path.dirname(output_test_file)
+        #     if not os.path.exists(output_dir):
+        #         os.makedirs(output_dir)
+        #     with open(output_test_file, "w") as writer:
+        #         logging.info("***** Output test results *****")
+        #         all_logits = preds.tolist()
+        #         for i, logit in tqdm(enumerate(all_logits), desc='Testing'):
+        #             instance_rep = '<CODESPLIT>'.join(
+        #                 [item.encode('ascii', 'ignore').decode('ascii') for item in instances[i]])
+        #
+        #             writer.write(instance_rep + '<CODESPLIT>' + '<CODESPLIT>'.join([str(l) for l in logit]) + '\n')
+        #         for key in sorted(result.keys()):
+        #             print("%s = %s" % (key, str(result[key])))
+
+        # return results
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
