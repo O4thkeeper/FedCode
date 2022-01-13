@@ -12,7 +12,7 @@ ${py} -m main.codesearch_fedavg \
   --partition_method niid_quantity_clients=15_beta=1.0 \
   --fl_algorithm FedAvg \
   --model_type "roberta-base" \
-  --model_name "microsoft/codebert-base" \
+  --model_name "cache/model" \
   --do_lower_case True \
   --train_batch_size 64 \
   --eval_batch_size 32 \
