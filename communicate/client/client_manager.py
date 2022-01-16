@@ -1,7 +1,7 @@
 import logging
 
 
-class FedAVGClientManager():
+class ClientManager:
     def __init__(self, args, trainer):
         self.args = args
         self.trainer = trainer

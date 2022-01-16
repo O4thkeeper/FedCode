@@ -130,7 +130,6 @@ class AbstractDataManager(ABC):
         if state:
             examples, features, dataset = res
         else:
-
             # todo reconstruct
             with open(self.data_path, "r", encoding='utf-8') as f:
                 lines = []
@@ -157,6 +156,36 @@ class AbstractDataManager(ABC):
                                      drop_last=False)
 
         return data_loader
+
+    def load_path_data(self, data_path):
+        state, res = self._load_data_loader_from_cache(-1, data_path.split("/")[-1])
+        if state:
+            examples, features, dataset = res
+        else:
+            # todo reconstruct
+            with open(data_path, "r", encoding='utf-8') as f:
+                lines = []
+                for line in f.readlines():
+                    line = line.strip().split('<CODESPLIT>')
+                    if len(line) != 5:
+                        continue
+                    lines.append(line)
+
+            raw_data = []
+            for (i, line) in enumerate(lines):
+                text_a = line[3]
+                text_b = line[4]
+                label = line[0]
+                raw_data.append((text_a, text_b, label))
+
+            examples, features, dataset = self.preprocessor.temp_transform(raw_data)
+            with open(res, "wb") as handle:
+                pickle.dump((examples, features, dataset), handle)
+        data_loader = BaseDataLoader(examples, features, dataset,
+                                     batch_size=self.batch_size,
+                                     num_workers=0,
+                                     pin_memory=True,
+                                     drop_last=False)
 
     def _load_data_loader_from_cache(self, client_id, data_type):
         """

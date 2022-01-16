@@ -10,6 +10,7 @@ import numpy as np
 from transformers import get_linear_schedule_with_warmup, AdamW
 
 from utils.evaluate_utils import compute_metrics
+from utils.model_utils import copy_state_dict
 
 
 class CodeSearchTrainer:
@@ -21,7 +22,7 @@ class CodeSearchTrainer:
         self.set_data(train_dl, valid_dl, test_dl)
 
         self.model = model
-        self.global_model_params = self.model_params_copy(self.model)
+        self.global_model_params = copy_state_dict(self.model.state_dict())
 
         self.results = {}
         self.best_accuracy = 0.0
@@ -34,22 +35,19 @@ class CodeSearchTrainer:
         self.test_dl = test_dl
 
     def get_model_params(self):
-        return self.model_params_copy(self.model)
+        return copy_state_dict(self.model.state_dict())
 
     def set_model_params(self, model_parameters):
         self.model.load_state_dict(model_parameters)
 
     def set_global_model_params(self, params):
-        self.global_model_params = params
+        self.global_model_params = copy_state_dict(params)
 
     def get_global_model_params(self):
         return self.global_model_params
 
-    def model_params_copy(self, model):
-        result = OrderedDict()
-        for key, value in model.state_dict().items():
-            result[key] = value.clone().detach()
-        return result
+    def get_model(self):
+        return self.model
 
     def train(self):
         """ Train the model """
@@ -67,6 +65,7 @@ class CodeSearchTrainer:
         #     t_total = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
         #
         # scheduler = get_linear_schedule_with_warmup(optimizer, args.warmup_steps, t_total)
+        self.model.to(self.device)
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler = self.build_optimizer(self.model, iteration_in_total)
 
@@ -127,7 +126,7 @@ class CodeSearchTrainer:
                 # else:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-                if step % 100 == 0:
+                if step % 300 == 0:
                     logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (idx, step, len(self.train_dl) - 1, loss))
 
                 tr_loss += loss.item()
@@ -194,6 +193,7 @@ class CodeSearchTrainer:
 
         # if args.local_rank in [-1, 0]:
         #     tb_writer.close()
+        self.model.cpu()
 
         return global_step, tr_loss / global_step
 
@@ -283,43 +283,43 @@ class CodeSearchTrainer:
     #     return results
 
     def test(self):
-        results = {}
-        logging.info("***** Running Test *****")
-        # logging.info("  Num examples = %d", len(eval_dataset))
-        logging.info("  Batch size = %d", self.args.eval_batch_size)
-        eval_loss = 0.0
-        nb_eval_steps = 0
-        preds = None
-        out_label_ids = None
-        for batch in tqdm(self.test_dl, desc="Testing"):
-            self.model.eval()
-            batch = tuple(t.to(self.device) for t in batch)
-
-            with torch.no_grad():
-                inputs = {'input_ids': batch[0],
-                          'attention_mask': batch[1],
-                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
-                          # XLM don't use segment_ids
-                          'labels': batch[3]}
-
-                outputs = self.model(**inputs)
-                tmp_eval_loss, logits = outputs[:2]
-
-                eval_loss += tmp_eval_loss.mean().item()
-            nb_eval_steps += 1
-            if preds is None:
-                preds = logits.detach().cpu().numpy()
-                out_label_ids = inputs['labels'].detach().cpu().numpy()
-            else:
-                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-        # eval_accuracy = accuracy(preds,out_label_ids)
-        eval_loss = eval_loss / nb_eval_steps
-        preds_label = np.argmax(preds, axis=1)
-        result = compute_metrics(preds_label, out_label_ids)
-        results.update(result)
         # for acc test
         if self.args.test_mode == 'acc':
+            results = {}
+            logging.info("***** Running Test *****")
+            # logging.info("  Num examples = %d", len(eval_dataset))
+            logging.info("  Batch size = %d", self.args.eval_batch_size)
+            eval_loss = 0.0
+            nb_eval_steps = 0
+            preds = None
+            out_label_ids = None
+            for batch in tqdm(self.test_dl, desc="Testing"):
+                self.model.eval()
+                batch = tuple(t.to(self.device) for t in batch)
+
+                with torch.no_grad():
+                    inputs = {'input_ids': batch[0],
+                              'attention_mask': batch[1],
+                              'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
+                              # XLM don't use segment_ids
+                              'labels': batch[3]}
+
+                    outputs = self.model(**inputs)
+                    tmp_eval_loss, logits = outputs[:2]
+
+                    eval_loss += tmp_eval_loss.mean().item()
+                nb_eval_steps += 1
+                if preds is None:
+                    preds = logits.detach().cpu().numpy()
+                    out_label_ids = inputs['labels'].detach().cpu().numpy()
+                else:
+                    preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                    out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
+            # eval_accuracy = accuracy(preds,out_label_ids)
+            eval_loss = eval_loss / nb_eval_steps
+            preds_label = np.argmax(preds, axis=1)
+            result = compute_metrics(preds_label, out_label_ids)
+            results.update(result)
             if not os.path.exists(self.args.output_dir):
                 os.makedirs(self.args.output_dir)
             output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
@@ -329,7 +329,15 @@ class CodeSearchTrainer:
                     logging.info("  %s = %s", key, str(result[key]))
                     writer.write("%s = %s\n" % (key, str(result[key])))
         # for mrr test
-        # elif (mode == 'mrr'):
+        elif self.args.test_mode == 'mrr':
+            examples=self.test_dl.examples
+            features=self.test_dl.features
+            # all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
+            # all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
+            # all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
+            # all_label_ids = torch.tensor([f.label_id for f in features], dtype=torch.long)
+        #     todo 每次从examples中取1000个，遍历每一个，与其他999个和自身组成data，输入进model，看正确的排名，倒数计入结果
+
         #     output_test_file = args.test_result_dir
         #     output_dir = os.path.dirname(output_test_file)
         #     if not os.path.exists(output_dir):

@@ -16,18 +16,21 @@ from transformers import (
     BartTokenizer,
 )
 
-from communicate.fedavg.fedavg_api import FedML_FedAvg_distributed
+from communicate.server.fedavg.fedavg_api import fedAvg_distributed
+from communicate.server.feddf.feddf_api import feddf_distributed
 from model.bert_model import BertForSequenceClassification
 from model.distilbert_model import DistilBertForSequenceClassification
 
 
 def get_fl_algorithm_initializer(alg_name):
     if alg_name == "FedAvg":
-        fl_algorithm = FedML_FedAvg_distributed
+        fl_algorithm = fedAvg_distributed
     # elif alg_name == "FedOPT":
     #     fl_algorithm = FedML_FedOpt_distributed
     # elif alg_name == "FedProx":
     #     fl_algorithm = FedML_FedProx_distributed
+    elif alg_name == "FedDf":
+        fl_algorithm = feddf_distributed
     else:
         raise Exception("please do sanity check for this algorithm.")
 
@@ -277,8 +280,9 @@ def add_code_search_args(parser):
     parser.add_argument('--server_optimizer', type=str, default='sgd',
                         help='Optimizer used on the server. This field can be the name of any subclass of the torch Opimizer class.')
 
-    parser.add_argument('--server_lr', type=float, default=0.1,
-                        help='server learning rate (default: 0.001)')
+    parser.add_argument('--server_lr', type=float, default=0.1)
+
+    parser.add_argument('--server_local_steps', type=int, default=1)
 
     parser.add_argument('--server_momentum', type=float, default=0,
                         help='server momentum (default: 0)')

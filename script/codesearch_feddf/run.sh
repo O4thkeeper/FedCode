@@ -1,7 +1,7 @@
-py=/Users/fenghao/Documents/pythonWork/venv/bin/python
-#py=python
+#py=/Users/fenghao/Documents/pythonWork/venv/bin/python
+py=python
 
-${py} -m main.codesearch_fedavg \
+${py} -m main.codesearch_feddf \
   --client_num_in_total 15 \
   --client_num_per_round 5 \
   --comm_round 9 \
@@ -10,7 +10,7 @@ ${py} -m main.codesearch_fedavg \
   --data_type "train" \
   --partition_file "data/store/codesearch/python_train_partition.h5" \
   --partition_method niid_quantity_clients=15_beta=1.0 \
-  --fl_algorithm FedAvg \
+  --fl_algorithm FedDf \
   --model_type 'roberta-base' \
   --model_name 'microsoft/codebert-base' \
   --do_lower_case True \
@@ -21,4 +21,6 @@ ${py} -m main.codesearch_fedavg \
   --server_lr 0.1 \
   --epochs 1 \
   --output_dir "tmp/fedavg_codesearch_output/" \
-  --do_train
+  --do_train \
+  --server_lr 0.1 \
+  --server_local_steps 1
