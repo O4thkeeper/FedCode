@@ -157,6 +157,22 @@ class AbstractDataManager(ABC):
 
         return data_loader
 
+    def load_mrr_test_data(self):
+        state, res = self._load_data_loader_from_cache(-1, self.data_type)
+        if state:
+            examples = res
+        else:
+            # todo reconstruct
+            examples = []
+            with open(self.data_path, "r", encoding='utf-8') as f:
+                for line in f.readlines():
+                    data = json.loads(line)
+                    doc_token = data['docstring_tokens']
+                    code_token = data['code_tokens']
+                    examples.append((doc_token, code_token))
+
+        return examples
+
     def load_path_data(self, data_path):
         state, res = self._load_data_loader_from_cache(-1, data_path.split("/")[-1])
         if state:

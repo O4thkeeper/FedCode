@@ -315,3 +315,17 @@ def add_code_search_args(parser):
     parser.add_argument('--test_mode', type=str, default='acc')
 
     return parser
+
+
+def add_mrr_test_args(parser):
+    parser.add_argument('--model_type', type=str, default='roberta-base')
+
+    parser.add_argument('--model_name', type=str, default='microsoft/codebert-base')
+
+    parser.add_argument('--data_file', type=str, default='')
+
+    parser.add_argument('--data_type', type=str, default='')
+
+    parser.add_argument('--batch_size', type=int, default=64)
+
+    parser.add_argument('--output_dir', type=str, default="tmp/")

@@ -287,7 +287,6 @@ class CodeSearchTrainer:
         if self.args.test_mode == 'acc':
             results = {}
             logging.info("***** Running Test *****")
-            # logging.info("  Num examples = %d", len(eval_dataset))
             logging.info("  Batch size = %d", self.args.eval_batch_size)
             eval_loss = 0.0
             nb_eval_steps = 0
@@ -332,28 +331,8 @@ class CodeSearchTrainer:
         elif self.args.test_mode == 'mrr':
             examples=self.test_dl.examples
             features=self.test_dl.features
-            # all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
-            # all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
-            # all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
-            # all_label_ids = torch.tensor([f.label_id for f in features], dtype=torch.long)
-        #     todo 每次从examples中取1000个，遍历每一个，与其他999个和自身组成data，输入进model，看正确的排名，倒数计入结果
 
-        #     output_test_file = args.test_result_dir
-        #     output_dir = os.path.dirname(output_test_file)
-        #     if not os.path.exists(output_dir):
-        #         os.makedirs(output_dir)
-        #     with open(output_test_file, "w") as writer:
-        #         logging.info("***** Output test results *****")
-        #         all_logits = preds.tolist()
-        #         for i, logit in tqdm(enumerate(all_logits), desc='Testing'):
-        #             instance_rep = '<CODESPLIT>'.join(
-        #                 [item.encode('ascii', 'ignore').decode('ascii') for item in instances[i]])
-        #
-        #             writer.write(instance_rep + '<CODESPLIT>' + '<CODESPLIT>'.join([str(l) for l in logit]) + '\n')
-        #         for key in sorted(result.keys()):
-        #             print("%s = %s" % (key, str(result[key])))
 
-        # return results
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)

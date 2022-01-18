@@ -19,7 +19,7 @@ ${py} -m main.codesearch_feddf \
   --eval_batch_size 32 \
   --max_seq_length 200 \
   --learning_rate 5e-5 \
-  --server_lr 0.1 \
+  --server_lr 5e-5 \
   --epochs 1 \
   --output_dir "tmp/fedavg_codesearch_output/" \
   --do_train \
