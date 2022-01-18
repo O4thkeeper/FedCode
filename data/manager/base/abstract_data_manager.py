@@ -186,6 +186,7 @@ class AbstractDataManager(ABC):
                                      num_workers=0,
                                      pin_memory=True,
                                      drop_last=False)
+        return data_loader
 
     def _load_data_loader_from_cache(self, client_id, data_type):
         """
