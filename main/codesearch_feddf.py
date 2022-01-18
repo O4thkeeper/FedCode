@@ -45,7 +45,7 @@ if __name__ == "__main__":
                                         args.train_batch_size, args.partition_file)
 
         train_loader_list, train_data_num_list = manager.load_federated_data(server=False)
-        server_data_loader = manager.load_path_data("data/store/codesearch/train_valid/python/valid1.txt")
+        server_data_loader = manager.load_path_data(args.server_data)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)  # "FedDf"
         server_func = fl_algorithm(server=True)

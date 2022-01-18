@@ -10,6 +10,7 @@ ${py} -m main.codesearch_feddf \
   --data_type "train" \
   --partition_file "data/store/codesearch/python_train_partition.h5" \
   --partition_method niid_quantity_clients=15_beta=1.0 \
+  --server_data "data/store/codesearch/train_valid/python/valid.txt" \
   --fl_algorithm FedDf \
   --model_type 'roberta-base' \
   --model_name 'microsoft/codebert-base' \

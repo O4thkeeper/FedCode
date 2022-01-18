@@ -208,6 +208,8 @@ def add_code_search_args(parser):
                         default='data/store/codesearch/python_train_partition.h5',
                         help='partition h5 file path')
 
+    parser.add_argument('--server_data', type=str, default='')
+
     parser.add_argument('--partition_method', type=str, help='partition method')
 
     parser.add_argument('--data_type', type=str, default='train', help='train or test')
