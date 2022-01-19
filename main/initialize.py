@@ -330,4 +330,6 @@ def add_mrr_test_args(parser):
 
     parser.add_argument('--output_dir', type=str, default="tmp/")
 
+    parser.add_argument('--manual_seed', type=int, default=42)
+
     return parser
