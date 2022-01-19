@@ -329,3 +329,5 @@ def add_mrr_test_args(parser):
     parser.add_argument('--batch_size', type=int, default=64)
 
     parser.add_argument('--output_dir', type=str, default="tmp/")
+
+    return parser
