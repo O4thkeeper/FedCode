@@ -7,7 +7,7 @@ ${py} -m main.mrr_test \
   --model_type "roberta-base" \
   --model_name "cache/model" \
   --batch_size 64 \
-  --test_batch_size 1000 \
+  --test_batch_size 100 \
   --output_dir "tmp/fedavg_codesearch_output/" \
   --manual_seed 42 \
   --max_seq_length 200
