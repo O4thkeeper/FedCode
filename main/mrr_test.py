@@ -52,7 +52,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      num_workers=0,
                                      pin_memory=True,
                                      drop_last=False)
-        logging.info("***** Running Test %s *****" % batch_idx)
+        logging.info("***** Running Test %s of %s *****" % (batch_idx, len(batch_data)))
         all_logits = test(args, data_loader, test_model)
 
         batched_data = chunked(all_logits, test_batch_size)
@@ -61,7 +61,6 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             correct_score = batch_data[batch_idx][-1]
             scores = np.array([data[-1] for data in batch_data])
             rank = np.sum(scores >= correct_score)
-            logging.info("***** %s batch: correct rank %s*****" % (batch_idx, rank))
             ranks.append(rank)
 
     mean_mrr = np.mean(1.0 / np.array(ranks))
