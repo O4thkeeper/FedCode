@@ -5,6 +5,7 @@ import pickle
 from abc import ABC, abstractmethod
 
 import h5py
+from tqdm import tqdm
 
 from data.preprocess.base.base_data_loader import BaseDataLoader
 
@@ -158,18 +159,15 @@ class AbstractDataManager(ABC):
         return data_loader
 
     def load_mrr_test_data(self):
-        state, res = self._load_data_loader_from_cache(-1, self.data_type)
-        if state:
-            examples = res
-        else:
-            # todo reconstruct
-            examples = []
-            with open(self.data_path, "r", encoding='utf-8') as f:
-                for line in f.readlines():
-                    data = json.loads(line)
-                    doc_token = data['docstring_tokens']
-                    code_token = data['code_tokens']
-                    examples.append((doc_token, code_token))
+
+        # todo reconstruct
+        examples = []
+        with open(self.data_path, "r", encoding='utf-8') as f:
+            for line in tqdm(f.readlines(), desc='loading mrr test data '):
+                data = json.loads(line)
+                doc_token = data['docstring_tokens']
+                code_token = data['code_tokens']
+                examples.append((doc_token, code_token))
 
         return examples
 

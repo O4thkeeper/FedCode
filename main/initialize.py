@@ -328,8 +328,12 @@ def add_mrr_test_args(parser):
 
     parser.add_argument('--batch_size', type=int, default=64)
 
+    parser.add_argument('--test_batch_size', type=int, default=1000)
+
     parser.add_argument('--output_dir', type=str, default="tmp/")
 
     parser.add_argument('--manual_seed', type=int, default=42)
+
+    parser.add_argument('--max_seq_length', type=int, default=200)
 
     return parser

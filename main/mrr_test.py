@@ -26,7 +26,6 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
 
-    np.random.seed(0)  # set random seed so that random things are reproducible
     np.random.shuffle(idxs)
     data = data[idxs]
     batched_data = chunked(data, test_batch_size)
@@ -127,4 +126,4 @@ if __name__ == "__main__":
                                     args.batch_size, None)
 
     test_raw_examples = manager.load_mrr_test_data()
-    process_data_and_test(test_raw_examples, model, preprocessor, args, test_batch_size=1000)
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size)
