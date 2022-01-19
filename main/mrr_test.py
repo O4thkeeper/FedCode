@@ -63,9 +63,10 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             ranks.append(rank)
 
     mean_mrr = np.mean(1.0 / np.array(ranks))
-    logging.info("mrr: {}".format(mean_mrr))
+    logging.info("mrr: %s" % (mean_mrr))
     with open(os.path.join(args.output_dir, 'mrr_test_result.txt'), 'a') as f:
-        f.write("mrr: {}".format(mean_mrr))
+        f.write("rank list:%s" % ranks)
+        f.write("mrr: %s" % (mean_mrr))
 
 
 def test(args, data_loader, model):
@@ -82,19 +83,13 @@ def test(args, data_loader, model):
                       'labels': batch[3]}
 
             outputs = model(**inputs)
-            logits = outputs[:1]
+            logits = outputs['logits']
         if preds is None:
             preds = logits.detach().cpu().numpy()
         else:
             preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
 
-    all_logits = []
-    for i, logit in tqdm(enumerate(preds.tolist()), desc='Testing'):
-        if i == 0:
-            logging.info("logit: %s" % logit)
-        all_logits.append('<CODESPLIT>'.join([str(l) for l in logit]) + '\n')
-
-    return all_logits
+    return preds.tolist()
 
 
 if __name__ == "__main__":
