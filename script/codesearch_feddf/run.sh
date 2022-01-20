@@ -23,5 +23,4 @@ ${py} -m main.codesearch_feddf \
   --epochs 1 \
   --output_dir "tmp/fedavg_codesearch_output/" \
   --do_train \
-  --server_lr 0.1 \
   --server_local_steps 1

@@ -284,55 +284,73 @@ class CodeSearchTrainer:
 
     def test(self):
         # for acc test
-        if self.args.test_mode == 'acc':
-            results = {}
-            logging.info("***** Running Test *****")
-            logging.info("  Batch size = %d", self.args.eval_batch_size)
-            eval_loss = 0.0
-            nb_eval_steps = 0
-            preds = None
-            out_label_ids = None
-            for batch in tqdm(self.test_dl, desc="Testing"):
-                self.model.eval()
-                batch = tuple(t.to(self.device) for t in batch)
+        logging.info("***** Running Test *****")
+        preds = None
+        out_label_ids = None
+        for batch in tqdm(self.test_dl, desc="Testing"):
+            self.model.eval()
+            batch = tuple(t.to(self.device) for t in batch)
 
-                with torch.no_grad():
-                    inputs = {'input_ids': batch[0],
-                              'attention_mask': batch[1],
-                              'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
-                              # XLM don't use segment_ids
-                              'labels': batch[3]}
+            with torch.no_grad():
+                inputs = {'input_ids': batch[0],
+                          'attention_mask': batch[1],
+                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
+                          # XLM don't use segment_ids
+                          'labels': batch[3]}
 
-                    outputs = self.model(**inputs)
-                    tmp_eval_loss, logits = outputs[:2]
+                outputs = self.model(**inputs)
+                _, logits = outputs[:2]
+            if preds is None:
+                preds = logits.detach().cpu().numpy()
+                out_label_ids = inputs['labels'].detach().cpu().numpy()
+            else:
+                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
+        preds_label = np.argmax(preds, axis=1)
+        result = compute_metrics(preds_label, out_label_ids)
+        if not os.path.exists(self.args.output_dir):
+            os.makedirs(self.args.output_dir)
+        output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
+        with open(output_test_file, "a+") as writer:
+            logging.info("***** Test results {} *****")
+            for key in sorted(result.keys()):
+                logging.info("  %s = %s", key, str(result[key]))
+                writer.write("%s = %s\n" % (key, str(result[key])))
 
-                    eval_loss += tmp_eval_loss.mean().item()
-                nb_eval_steps += 1
-                if preds is None:
-                    preds = logits.detach().cpu().numpy()
-                    out_label_ids = inputs['labels'].detach().cpu().numpy()
-                else:
-                    preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-                    out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-            # eval_accuracy = accuracy(preds,out_label_ids)
-            eval_loss = eval_loss / nb_eval_steps
-            preds_label = np.argmax(preds, axis=1)
-            result = compute_metrics(preds_label, out_label_ids)
-            results.update(result)
-            if not os.path.exists(self.args.output_dir):
-                os.makedirs(self.args.output_dir)
-            output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
-            with open(output_test_file, "a+") as writer:
-                logging.info("***** Test results {} *****")
-                for key in sorted(result.keys()):
-                    logging.info("  %s = %s", key, str(result[key]))
-                    writer.write("%s = %s\n" % (key, str(result[key])))
-        # for mrr test
-        elif self.args.test_mode == 'mrr':
-            examples=self.test_dl.examples
-            features=self.test_dl.features
+    def eval(self):
+        logging.info("***** Running Evaluation *****")
+        logging.info("  Batch size = %d", self.args.eval_batch_size)
+        eval_loss = 0.0
+        nb_eval_steps = 0
+        preds = None
+        out_label_ids = None
+        for batch in tqdm(self.valid_dl, desc="Evaluating"):
+            self.model.eval()
+            batch = tuple(t.to(self.device) for t in batch)
 
+            with torch.no_grad():
+                inputs = {'input_ids': batch[0],
+                          'attention_mask': batch[1],
+                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
+                          # XLM don't use segment_ids
+                          'labels': batch[3]}
 
+                outputs = self.model(**inputs)
+                tmp_eval_loss, logits = outputs[:2]
+
+                eval_loss += tmp_eval_loss.mean().item()
+            nb_eval_steps += 1
+            if preds is None:
+                preds = logits.detach().cpu().numpy()
+                out_label_ids = inputs['labels'].detach().cpu().numpy()
+            else:
+                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
+        # eval_accuracy = accuracy(preds,out_label_ids)
+        eval_loss = eval_loss / nb_eval_steps
+        preds_label = np.argmax(preds, axis=1)
+        result = compute_metrics(preds_label, out_label_ids)
+        logging.info("evaluation result { loss: %s; acc: %s; f1: %s" % (eval_loss, result['acc'], result['f1']))
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)

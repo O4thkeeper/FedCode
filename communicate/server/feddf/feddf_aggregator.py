@@ -21,15 +21,23 @@ class FedDfAggregator(BaseAggregator):
 
     def aggregate(self, model_params_list, sample_num_list):
         averaged_params = self.avg_params(model_params_list, sample_num_list)
+        self.eval(self.server_trainer, self.data_loader, averaged_params)
 
         self.knowledge_transfer(self.server_trainer, averaged_params, self.client_trainer, model_params_list,
                                 self.data_loader, self.args)
+        self.eval(self.server_trainer, self.data_loader, self.server_trainer.get_global_model_params())
+
         self.set_global_model_params(self.server_trainer.get_global_model_params())
         # filename = os.path.join('cache', str(time.time()))
         # torch.save(averaged_params, filename)
 
     def test_on_server(self):
         self.trainer.test()
+
+    def eval(self, trainer, data_loader, model_params):
+        trainer.set_data(valid_dl=data_loader)
+        trainer.set_model_params(model_params)
+        trainer.eval()
 
     def avg_params(self, model_params_list, sample_num_list):
         training_num = sum(sample_num_list)
@@ -70,12 +78,21 @@ class FedDfAggregator(BaseAggregator):
             weights = [1.0 / len(client_params_list)] * len(client_params_list)
             teacher_avg_logits = sum([teacher_logit * weight for teacher_logit, weight in zip(teacher_logits, weights)])
 
+            if step % 16 == 0:
+                logging.info("teacher_logits:%s" % teacher_logits)
+                logging.info("teacher_avg_logits:%s" % teacher_avg_logits)
+
             server_trainer.set_model_params(avg_params)
             server_model.to(self.device)
             server_model.train()
             for i in range(args.server_local_steps):
                 student_logits = server_model(**inputs)[1]
                 student_avg_loss = self.divergence(student_logits, teacher_avg_logits)
+
+                if step % 16 == 0:
+                    logging.info("student_logits:%s" % student_logits)
+                    logging.info("student_avg_loss%s" % student_avg_loss)
+
                 optimizer_server.zero_grad()
                 student_avg_loss.backward()
                 torch.nn.utils.clip_grad_norm_(server_model.parameters(), 5)

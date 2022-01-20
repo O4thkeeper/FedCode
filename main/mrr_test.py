@@ -52,7 +52,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      num_workers=0,
                                      pin_memory=True,
                                      drop_last=False)
-        logging.info("***** Running Test %s of %s *****" % (batch_idx, len(batch_data)))
+        logging.info("***** Running Test %s of %s *****" % (batch_idx, len(batched_data)))
         all_logits = test(args, data_loader, test_model)
 
         batched_data = chunked(all_logits, test_batch_size)
