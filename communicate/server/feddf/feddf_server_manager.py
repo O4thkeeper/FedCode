@@ -10,6 +10,8 @@ class FedDfServerManager():
         self.clients = clients
 
     def run(self):
+        self.aggregator.eval(self.aggregator.server_trainer, self.aggregator.data_loader,
+                             self.aggregator.server_trainer.get_global_model_params())
         for round in range(self.round_num):
             client_indexes = self.aggregator.client_sampling(round, self.client_num, self.args.client_num_per_round)
             logging.info('round %d begin: sample client %s' % (round, str(client_indexes)))

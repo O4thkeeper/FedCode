@@ -283,6 +283,7 @@ class CodeSearchTrainer:
     #     return results
 
     def test(self):
+        self.model.to(self.device)
         # for acc test
         logging.info("***** Running Test *****")
         preds = None
@@ -318,6 +319,7 @@ class CodeSearchTrainer:
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
     def eval(self):
+        self.model.to(self.device)
         logging.info("***** Running Evaluation *****")
         logging.info("  Batch size = %d", self.args.eval_batch_size)
         eval_loss = 0.0
