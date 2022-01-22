@@ -60,7 +60,7 @@ class FedDfAggregator(BaseAggregator):
         optimizer_server = torch.optim.Adam(server_model.parameters(), lr=args.server_lr)
 
         logging.info("start knowledge transfer with data loader %s" % data_loader)
-        for step, batch in tqdm(enumerate(data_loader), desc="knowledge transfer:"):
+        for batch in tqdm(data_loader, desc="knowledge transfer"):
             batch = tuple(t.to(self.device) for t in batch)
             inputs = {'input_ids': batch[0],
                       'attention_mask': batch[1],
