@@ -15,7 +15,6 @@ if __name__ == "__main__":
     parser = add_code_search_args(parser)
     args = parser.parse_args()
 
-    # customize the log format
     logging.basicConfig(
         level=logging.INFO,
         format='%(process)s %(asctime)s.%(msecs)03d - {%(module)s.py (%(lineno)d)} - %(funcName)s(): %(message)s',
@@ -62,10 +61,6 @@ if __name__ == "__main__":
         tokenizer.save_pretrained('cache/model/codesearch_feddf')
 
     if args.do_test:
-        # config = config_class.from_pretrained('cache/model/config.json', num_labels=num_labels,
-        #                                       finetuning_task='codesearch')
-        # tokenizer = tokenizer_class.from_pretrained('roberta-base')
-        # model = model_class.from_pretrained('cache/model/pytorch_model.bin', config=config)
         config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
         model = model_class.from_pretrained(args.model_name, config=config)
