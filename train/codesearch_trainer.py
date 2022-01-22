@@ -50,149 +50,51 @@ class CodeSearchTrainer:
         return self.model
 
     def train(self):
-        """ Train the model """
-        # if args.local_rank in [-1, 0]:
-        #     tb_writer = SummaryWriter()
-        #
-        # args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-        # train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
-        # train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
-        #
-        # if args.max_steps > 0:
-        #     t_total = args.max_steps
-        #     args.num_train_epochs = args.max_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
-        # else:
-        #     t_total = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
-        #
-        # scheduler = get_linear_schedule_with_warmup(optimizer, args.warmup_steps, t_total)
+
         self.model.to(self.device)
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler = self.build_optimizer(self.model, iteration_in_total)
 
-        # checkpoint_last = os.path.join(args.output_dir, 'checkpoint-last')
-        # scheduler_last = os.path.join(checkpoint_last, 'scheduler.pt')
-        # if os.path.exists(scheduler_last):
-        #     scheduler.load_state_dict(torch.load(scheduler_last))
-
-        # Train!
         logging.info("***** Running training *****")
-        # logging.info("  Num examples = %d", len(train_dataset))
-        # logging.info("  Num Epochs = %d", args.num_train_epochs)
-        # logging.info("  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
-        # logging.info("  Total train batch size (w. parallel, distributed & accumulation) = %d",
-        #              args.train_batch_size * args.gradient_accumulation_steps * (
-        #                  torch.distributed.get_world_size() if args.local_rank != -1 else 1))
-        # logging.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
-        # logging.info("  Total optimization steps = %d", t_total)
 
         # global_step = args.start_step
         args = self.args
         global_step = 0
-        tr_loss, logging_loss = 0.0, 0.0
-        best_acc = 0.0
+        tr_loss = 0.0
         self.model.zero_grad()
-        # train_iterator = trange(args.start_epoch, int(args.num_train_epochs), desc="Epoch",
-        #                         disable=args.local_rank not in [-1, 0])
-        # set_seed(args)  # Added here for reproductibility (even between python2 2 and 3)
+
         self.model.train()
-        # for idx, _ in enumerate(train_iterator):
+
         for idx in range(args.epochs):
-            tr_loss = 0.0
-            for step, batch in enumerate(self.train_dl):
+            log_loss = 0.0
+            step = 0
+            for batch in tqdm(self.train_dl, desc="training"):
 
                 batch = tuple(t.to(self.device) for t in batch)
                 inputs = {'input_ids': batch[0],
                           'attention_mask': batch[1],
                           'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
-                          # XLM don't use segment_ids
                           'labels': batch[3]}
                 ouputs = self.model(**inputs)
-                loss = ouputs[0]  # model outputs are always tuple in pytorch-transformers (see doc)
+                loss = ouputs[0]
 
-                # if args.n_gpu > 1:
-                #     loss = loss.mean()  # mean() to average on multi-gpu parallel training
                 if self.args.gradient_accumulation_steps > 1:
                     loss = loss / args.gradient_accumulation_steps
 
-                # if args.fp16:
-                #     try:
-                #         from apex import amp
-                #     except ImportError:
-                #         raise ImportError(
-                #             "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-                #     with amp.scale_loss(loss, optimizer) as scaled_loss:
-                #         scaled_loss.backward()
-                #     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
-                # else:
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-                if step % 300 == 0:
-                    logging.info("epoch = %d, batch_idx = %d/%d, loss = %s" % (idx, step, len(self.train_dl) - 1, loss))
 
-                tr_loss += loss.item()
+                log_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:
                     optimizer.step()
                     scheduler.step()  # Update learning rate schedule
                     self.model.zero_grad()
                     global_step += 1
 
-                    # if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
-                    #     # Log metrics
-                    #     if args.local_rank == -1 and args.evaluate_during_training:  # Only evaluate when single GPU otherwise metrics may not average well
-                    #         results = evaluate(args, model, tokenizer, checkpoint=str(global_step))
-                    #         for key, value in results.items():
-                    #             tb_writer.add_scalar('eval_{}'.format(key), value, global_step)
-                    #             logger.info('loss %s', str(tr_loss - logging_loss))
-                    #     tb_writer.add_scalar('lr', scheduler.get_lr()[0], global_step)
-                    #     tb_writer.add_scalar('loss', (tr_loss - logging_loss) / args.logging_steps, global_step)
-                    #     logging_loss = tr_loss
-                # if args.max_steps > 0 and global_step > args.max_steps:
-                # epoch_iterator.close()
-                # break
+                step += 1
+            logging.info("epoch %s loss = %s" % (idx, log_loss / step))
+            tr_loss += log_loss
 
-            # if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-            #     results = self.evaluate(args, self.model, tokenizer, checkpoint=str(args.start_epoch + idx))
-            #
-            #     last_output_dir = os.path.join(args.output_dir, 'checkpoint-last')
-            #     if not os.path.exists(last_output_dir):
-            #         os.makedirs(last_output_dir)
-            #     model_to_save = model.module if hasattr(model,
-            #                                             'module') else model  # Take care of distributed/parallel training
-            #     model_to_save.save_pretrained(last_output_dir)
-            #     logging.info("Saving model checkpoint to %s", last_output_dir)
-            #     idx_file = os.path.join(last_output_dir, 'idx_file.txt')
-            #     with open(idx_file, 'w', encoding='utf-8') as idxf:
-            #         idxf.write(str(args.start_epoch + idx) + '\n')
-            #
-            #     torch.save(optimizer.state_dict(), os.path.join(last_output_dir, "optimizer.pt"))
-            #     torch.save(scheduler.state_dict(), os.path.join(last_output_dir, "scheduler.pt"))
-            #     logging.info("Saving optimizer and scheduler states to %s", last_output_dir)
-            #
-            #     step_file = os.path.join(last_output_dir, 'step_file.txt')
-            #     with open(step_file, 'w', encoding='utf-8') as stepf:
-            #         stepf.write(str(global_step) + '\n')
-            #
-            #     if (results['acc'] > best_acc):
-            #         best_acc = results['acc']
-            #         output_dir = os.path.join(args.output_dir, 'checkpoint-best')
-            #         if not os.path.exists(output_dir):
-            #             os.makedirs(output_dir)
-            #         model_to_save = model.module if hasattr(model,
-            #                                                 'module') else model  # Take care of distributed/parallel training
-            #         model_to_save.save_pretrained(output_dir)
-            #         torch.save(args, os.path.join(output_dir, 'training_{}.bin'.format(idx)))
-            #         logging.info("Saving model checkpoint to %s", output_dir)
-            #
-            #         torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-            #         torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-            #         logging.info("Saving optimizer and scheduler states to %s", output_dir)
-
-            # if args.max_steps > 0 and global_step > args.max_steps:
-            #     train_iterator.close()
-            #     break
-
-        # if args.local_rank in [-1, 0]:
-        #     tb_writer.close()
         self.model.cpu()
 
         return global_step, tr_loss / global_step
