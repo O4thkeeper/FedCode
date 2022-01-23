@@ -56,8 +56,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         logging.info("***** Running Test %s *****" % batch_idx)
         all_logits = test(args, data_loader, test_model)
 
-        batched_data = chunked(all_logits, test_batch_size)
-        for batch_idx, batch_data in enumerate(batched_data):
+        batched_logits = chunked(all_logits, test_batch_size)
+        for batch_idx, batch_data in enumerate(batched_logits):
             num_batch += 1
             correct_score = batch_data[batch_idx][-1]
             scores = np.array([data[-1] for data in batch_data])
@@ -66,6 +66,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
 
     mean_mrr = np.mean(1.0 / np.array(ranks))
     logging.info("mrr: %s" % (mean_mrr))
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir, exist_ok=True)
     with open(os.path.join(args.output_dir, 'mrr_test_result.txt'), 'a') as f:
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
         f.write("rank list:%s\n" % ranks)
