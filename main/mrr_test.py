@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os.path
+import time
 
 import numpy as np
 import torch
@@ -66,8 +67,9 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     mean_mrr = np.mean(1.0 / np.array(ranks))
     logging.info("mrr: %s" % (mean_mrr))
     with open(os.path.join(args.output_dir, 'mrr_test_result.txt'), 'a') as f:
-        f.write("rank list:%s" % ranks)
-        f.write("mrr: %s" % (mean_mrr))
+        f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
+        f.write("rank list:%s\n" % ranks)
+        f.write("mrr: %s\n\n" % (mean_mrr))
 
 
 def test(args, data_loader, model):
