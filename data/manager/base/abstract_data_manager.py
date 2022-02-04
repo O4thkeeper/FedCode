@@ -61,12 +61,12 @@ class AbstractDataManager(ABC):
 
         return data_loader
 
-    def load_federated_data(self, server):
+    def load_federated_data(self, server, count=False):
         if server:
             return self._load_federated_data_server()
         else:
             self.num_clients = self.load_num_clients(self.partition_path, self.args.partition_method)
-            return self._load_federated_data_local()
+            return self._load_federated_data_local(count)
 
     def _load_federated_data_server(self):
         state, res = self._load_data_loader_from_cache(-1, self.data_type)
@@ -88,7 +88,7 @@ class AbstractDataManager(ABC):
 
         return data_loader
 
-    def _load_federated_data_local(self):
+    def _load_federated_data_local(self, count=False):
 
         data_file = h5py.File(self.data_path, "r", swmr=True)
         partition_file = h5py.File(self.partition_path, "r", swmr=True)
@@ -123,6 +123,16 @@ class AbstractDataManager(ABC):
 
         data_file.close()
         partition_file.close()
+
+        if count:
+            cls_num_list = []
+            for loader in loader_list:
+                examples = loader.examples
+                cls_num = [0, 0]
+                for example in examples:
+                    cls_num[int(example.label)] += 1
+                cls_num_list.append(cls_num)
+            return loader_list, data_num_list, cls_num_list
 
         return loader_list, data_num_list
 

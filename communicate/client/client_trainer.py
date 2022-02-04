@@ -15,7 +15,7 @@ class ClientTrainer(object):
     def train(self, index, current_model):
         self.trainer.set_model_params(current_model)
         self.trainer.set_data(self.train_loader_list[index])
-        self.trainer.train()
+        self.trainer.train(index)
         model_params = self.trainer.get_model_params()
         return model_params, self.train_data_num_list[index]
 

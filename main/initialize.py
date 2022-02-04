@@ -18,6 +18,7 @@ from transformers import (
 
 from communicate.server.fedavg.fedavg_api import fedAvg_distributed
 from communicate.server.feddf.feddf_api import feddf_distributed
+from communicate.server.fedrod.fedrod_api import fedrod_distributed
 from model.bert_model import BertForSequenceClassification
 from model.distilbert_model import DistilBertForSequenceClassification
 
@@ -25,12 +26,10 @@ from model.distilbert_model import DistilBertForSequenceClassification
 def get_fl_algorithm_initializer(alg_name):
     if alg_name == "FedAvg":
         fl_algorithm = fedAvg_distributed
-    # elif alg_name == "FedOPT":
-    #     fl_algorithm = FedML_FedOpt_distributed
-    # elif alg_name == "FedProx":
-    #     fl_algorithm = FedML_FedProx_distributed
     elif alg_name == "FedDf":
         fl_algorithm = feddf_distributed
+    elif alg_name == "FedRod":
+        fl_algorithm = fedrod_distributed
     else:
         raise Exception("please do sanity check for this algorithm.")
 
@@ -210,6 +209,8 @@ def add_code_search_args(parser):
 
     parser.add_argument('--server_data', type=str, default='')
 
+    parser.add_argument('--eval_data_file', type=str, default='')
+
     parser.add_argument('--partition_method', type=str, help='partition method')
 
     parser.add_argument('--data_type', type=str, default='train', help='train or test')
@@ -309,6 +310,8 @@ def add_code_search_args(parser):
 
     # mode related
     parser.add_argument('--do_train', action="store_true")
+
+    parser.add_argument('--do_eval', action="store_true")
 
     parser.add_argument('--do_test', action="store_true")
 

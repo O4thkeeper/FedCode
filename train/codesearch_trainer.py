@@ -1,11 +1,9 @@
 import logging
 import math
 import os
-import time
-from collections import OrderedDict
 
 import torch
-from tqdm import tqdm, trange
+from tqdm import tqdm
 import numpy as np
 from transformers import get_linear_schedule_with_warmup, AdamW
 
@@ -49,7 +47,7 @@ class CodeSearchTrainer:
     def get_model(self):
         return self.model
 
-    def train(self):
+    def train(self, index):
 
         self.model.to(self.device)
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
