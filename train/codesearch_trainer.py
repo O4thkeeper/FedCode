@@ -28,9 +28,12 @@ class CodeSearchTrainer:
         self.freeze_layers = args.freeze_layers.split(",") if args.freeze_layers else []
 
     def set_data(self, train_dl=None, valid_dl=None, test_dl=None):
-        self.train_dl = train_dl
-        self.valid_dl = valid_dl
-        self.test_dl = test_dl
+        if train_dl is not None:
+            self.train_dl = train_dl
+        if valid_dl is not None:
+            self.valid_dl = valid_dl
+        if test_dl is not None:
+            self.test_dl = test_dl
 
     def get_model_params(self):
         return copy_state_dict(self.model.state_dict())

@@ -33,6 +33,7 @@ if __name__ == "__main__":
         attributes = AbstractDataManager.load_attributes(args.data_file)
         num_labels = len(attributes["label_vocab"])
 
+        # todo model_name model_type check
         config = config_class.from_pretrained(args.model_name, num_labels=num_labels, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
         client_model = model_class.from_pretrained(args.model_name, config=config)
