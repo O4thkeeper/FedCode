@@ -1,3 +1,5 @@
+import logging
+
 import torch
 import torch.nn.functional as F
 import torch.nn.init as init
@@ -68,8 +70,9 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         return sequence_output
 
     def forward_local_bias(self, feat):
+        logging.info("feat shape:%s" % feat.shape)
         clf_w = self.h_linear(feat)
-        x = torch.matmul(feat, clf_w)
+        x = torch.matmul(feat.view(-1), clf_w)
         return x
 
     def forward_global(self, feat):
