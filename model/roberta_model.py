@@ -119,7 +119,7 @@ class HyperClassifier(nn.Module):
     def forward(self, feat):
         h_in = F.relu(self.fc1(feat))
         h_final = self.fc2(h_in)
-        h_final = h_final.view(self.label_count)
+        h_final = h_final.view(-1, self.label_count)
 
         return h_final
 
