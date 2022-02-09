@@ -158,6 +158,7 @@ class CodeSearchFedrodTrainer:
         preds_local = None
         out_label_ids = None
         local_loss_fn = torch.nn.CrossEntropyLoss()
+        # todo cls_num_list is train data's now
         global_loss_fn = BSMLoss(cls_num_list=self.cls_num_list[index])
         for batch in tqdm(self.valid_dl, desc="Evaluating"):
             self.model.eval()

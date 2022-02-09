@@ -32,6 +32,7 @@ if __name__ == "__main__":
         # dataset attributes
         attributes = AbstractDataManager.load_attributes(args.data_file)
         num_labels = len(attributes["label_vocab"])
+        args.num_labels = num_labels
 
         config = config_class.from_pretrained(args.model_name, num_labels=num_labels, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
@@ -54,7 +55,7 @@ if __name__ == "__main__":
         trainer = CodeSearchFedrodTrainer(args, device, model)
 
         clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
-        server = server_func(clients, None,eval_data_loader, None, args, device, trainer)
+        server = server_func(clients, None, eval_data_loader, None, args, device, trainer)
         server.run()
 
         model.save_pretrained('cache/model/fedrod')
