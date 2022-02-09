@@ -203,7 +203,7 @@ class CodeSearchFedrodTrainer:
         phead_optimizer = AdamW(model.h_linear.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
 
         parms = []
-        for name, parm in model.state_dict():
+        for name, parm in model.state_dict().items():
             if 'h_linear' not in name and 'classifier' not in name:
                 parms.append(parm)
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
