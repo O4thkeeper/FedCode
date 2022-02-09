@@ -13,7 +13,7 @@ from utils.model_utils import copy_state_dict
 
 
 class CodeSearchFedrodTrainer:
-    def __init__(self, args, device, model, train_dl=None, valid_dl=None, test_dl=None):
+    def __init__(self, args, device, model, train_dl=None, valid_dl=None, test_dl=None, h_linear_state_list=None):
         self.args = args
         self.device = device
 
@@ -23,6 +23,7 @@ class CodeSearchFedrodTrainer:
 
         self.model = model
         self.global_model_params = copy_state_dict(self.model.state_dict())
+        self.h_linear_state_list = h_linear_state_list
 
         self.results = {}
         self.best_accuracy = 0.0
@@ -40,7 +41,8 @@ class CodeSearchFedrodTrainer:
     def get_model_params(self):
         return copy_state_dict(self.model.state_dict())
 
-    def set_model_params(self, model_parameters):
+    def set_model_params(self, model_parameters, index):
+        model_parameters.update(self.h_linear_state_list[index])
         self.model.load_state_dict(model_parameters)
 
     def set_global_model_params(self, params):
@@ -71,6 +73,7 @@ class CodeSearchFedrodTrainer:
 
         for idx in range(args.epochs):
             log_loss = [0.0, 0.0]
+            loss_list = [[], []]
             step = 0
             for batch in tqdm(self.train_dl, desc="training"):
                 batch = tuple(t.to(self.device) for t in batch)
@@ -99,14 +102,24 @@ class CodeSearchFedrodTrainer:
                 phead_optimizer.step()
                 self.model.zero_grad()
 
+                if step % 100 == 0:
+                    loss_list[0].append(global_loss.item())
+                    loss_list[1].append(local_loss.item())
+
                 step += 1
             global_step += step
             logging.info(
                 "epoch %s train global_loss = %s local_loss = %s" % (idx, log_loss[0] / step, log_loss[1] / step))
+            logging.info("epoch %s sample global_loss = %s" % (idx, loss_list[0]))
+            logging.info("epoch %s sample local_loss = %s" % (idx, loss_list[1]))
+
             tr_loss = [a + b for a, b in zip(log_loss, tr_loss)]
 
             if args.do_eval:
                 self.eval(index)
+        for name, param in self.model.state_dict():
+            if 'h_linear' in name:
+                self.h_linear_state_list[index][name] = param.clone().detach().cpu()
 
         self.model.cpu()
 

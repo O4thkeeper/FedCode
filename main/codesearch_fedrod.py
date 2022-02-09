@@ -51,8 +51,12 @@ if __name__ == "__main__":
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
         client_func = fl_algorithm(server=False)
-
-        trainer = CodeSearchFedrodTrainer(args, device, model)
+        h_linear_state_list = [{} for _ in range(args.client_num_in_total)]
+        for name, param in model.state_dict():
+            if 'h_linear' in name:
+                for i in range(args.client_num_in_total):
+                    h_linear_state_list[i][name] = param.clone().detach().cpu()
+        trainer = CodeSearchFedrodTrainer(args, device, model, h_linear_state_list=h_linear_state_list)
 
         clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
         server = server_func(clients, None, eval_data_loader, None, args, device, trainer)
