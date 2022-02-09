@@ -68,7 +68,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         return sequence_output
 
     def forward_local_bias(self, feat):
-        clf_w = self.p_head(feat)
+        clf_w = self.h_linear(feat)
         x = torch.matmul(feat, clf_w)
         return x
 
