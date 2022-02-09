@@ -57,8 +57,8 @@ class CodeSearchFedrodTrainer:
         self.model.to(self.device)
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler, ghead_optimizer, phead_optimizer = self.build_optimizer(self.model, iteration_in_total)
-        local_loss_fn = torch.nn.CrossEntropyLoss()
-        global_loss_fn = BSMLoss(cls_num_list=self.cls_num_list[index])
+        local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
+        global_loss_fn = BSMLoss(torch.tensor(self.cls_num_list[index]).to(self.device)).to(self.device)
 
         logging.info("***** Running training *****")
 
