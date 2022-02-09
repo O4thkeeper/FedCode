@@ -70,9 +70,9 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         return sequence_output
 
     def forward_local_bias(self, feat):
-        logging.info(feat.shape)
-        clf_w = self.h_linear(feat)
-        x = torch.matmul(feat.view(-1), clf_w)
+        cls_feat = feat[:, 0, :]
+        clf_w = self.h_linear(cls_feat)
+        x = torch.matmul(cls_feat, clf_w)
         return x
 
     def forward_global(self, feat):
@@ -122,7 +122,7 @@ class HyperClassifier(nn.Module):
     def forward(self, feat):
         h_in = F.relu(self.fc1(feat))
         h_final = self.fc2(h_in)
-        h_final = h_final.view(-1, self.label_count)
+        h_final = h_final[0, :].view(-1, self.label_count)
 
         return h_final
 
