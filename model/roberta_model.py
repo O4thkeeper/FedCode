@@ -70,7 +70,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         return sequence_output
 
     def forward_local_bias(self, feat):
-        logging.info("feat shape:%s" % feat.shape)
+        logging.info(feat.shape)
         clf_w = self.h_linear(feat)
         x = torch.matmul(feat.view(-1), clf_w)
         return x
