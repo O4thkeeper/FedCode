@@ -117,7 +117,7 @@ class CodeSearchFedrodTrainer:
 
             if args.do_eval:
                 self.eval(index)
-        for name, param in self.model.state_dict().item():
+        for name, param in self.model.state_dict().items():
             if 'h_linear' in name:
                 self.h_linear_state_list[index][name] = param.clone().detach().cpu()
 

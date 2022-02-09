@@ -52,7 +52,7 @@ if __name__ == "__main__":
         server_func = fl_algorithm(server=True)
         client_func = fl_algorithm(server=False)
         h_linear_state_list = [{} for _ in range(args.client_num_in_total)]
-        for name, param in model.state_dict().item():
+        for name, param in model.state_dict().items():
             if 'h_linear' in name:
                 for i in range(args.client_num_in_total):
                     h_linear_state_list[i][name] = param.clone().detach().cpu()
