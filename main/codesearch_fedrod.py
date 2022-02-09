@@ -37,7 +37,6 @@ if __name__ == "__main__":
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
         model = model_class.from_pretrained(args.model_name, config=config)
         model.to(device)
-        logging.info(model.state_dict().keys())
 
         # data
         preprocessor = CodeSearchPreprocessor(args=args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)

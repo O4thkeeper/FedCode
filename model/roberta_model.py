@@ -21,6 +21,8 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         self.init_weights()
 
         self.h_linear = HyperClassifier(config.hidden_size, 2)
+        self.classifier.apply(_weights_init)
+        self.h_linear.apply(_weights_init)
 
     # @add_start_docstrings_to_model_forward(ROBERTA_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     # @add_code_sample_docstrings(
@@ -113,7 +115,6 @@ class HyperClassifier(nn.Module):
         self.label_count = label_count
         self.fc1 = nn.Linear(f_size, f_size)
         self.fc2 = nn.Linear(f_size, f_size * label_count)
-        self.apply(_weights_init)
 
     def forward(self, feat):
         h_in = F.relu(self.fc1(feat))

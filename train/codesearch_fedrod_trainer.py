@@ -198,7 +198,7 @@ class CodeSearchFedrodTrainer:
         logging.info("local result: loss: %s; acc: %s; f1: %s" % (eval_loss, result_local['acc'], result_local['f1']))
 
     def build_optimizer(self, model, iteration_in_total):
-        ghead_optimizer = AdamW(model.g_linear.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        ghead_optimizer = AdamW(model.classifier.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
         phead_optimizer = AdamW(model.h_linear.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
 
         parms = []

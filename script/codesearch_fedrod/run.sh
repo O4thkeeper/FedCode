@@ -10,7 +10,7 @@ ${py} -m main.codesearch_fedrod \
   --data_type "train" \
   --partition_file "data/store/codesearch/python_train_partition.h5" \
   --partition_method niid_quantity_clients=15_beta=1.0 \
-  --eval_data_file "data/store/codesearch/train_valid/python/eval.txt" \
+  --eval_data_file "data/store/codesearch/train_valid/python/valid.txt" \
   --fl_algorithm "FedRod" \
   --model_type "roberta-base" \
   --model_name "microsoft/codebert-base" \
@@ -21,5 +21,5 @@ ${py} -m main.codesearch_fedrod \
   --learning_rate 5e-5 \
   --epochs 1 \
   --output_dir "tmp/fedrod_codesearch_output/" \
-  --do_train \
-  --do_eval
+  --do_train
+#  --do_eval
