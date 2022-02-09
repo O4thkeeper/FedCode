@@ -15,7 +15,7 @@ class ClientTrainer(object):
         self.trainer.set_model_params(weights)
 
     def train(self, index, current_model):
-        self.trainer.set_model_params(current_model)
+        self.trainer.set_model_params(current_model, index)
         self.trainer.set_data(self.train_loader_list[index])
         if self.test_loader_list is not None:
             self.trainer.set_data(test_dl=self.test_loader_list[index])

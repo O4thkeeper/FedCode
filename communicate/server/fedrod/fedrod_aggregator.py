@@ -38,7 +38,7 @@ class FedRodAggregator(BaseAggregator):
                     averaged_params[k] += local_model_params[k] * w
 
         self.set_global_model_params(averaged_params)
-        self.trainer.set_model_params(averaged_params)
+        self.trainer.set_model_params(averaged_params, 0)
 
     def test_on_server(self):
         self.trainer.test()
