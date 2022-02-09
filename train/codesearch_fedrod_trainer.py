@@ -80,7 +80,7 @@ class CodeSearchFedrodTrainer:
                           'labels': batch[3]}
                 sequence_output = self.model(**inputs)
                 logits = self.model.forward_global(sequence_output)
-                logits_local = self.model.forward_local_bias(sequence_output)
+                logits_local = self.model.forward_local_bias(sequence_output.detach())
                 labels = batch[3]
 
                 global_loss = global_loss_fn(logits.view(-1, self.num_labels), labels.view(-1))
