@@ -70,19 +70,6 @@ def convert_examples_to_features(examples, tokenizer, args, stage=None):
         target_ids += [tokenizer.pad_token_id] * padding_length
         target_mask += [0] * padding_length
 
-        if example_index < 1:
-            if stage == 'train':
-                logging.info("*** Example ***")
-                logging.info("idx: {}".format(example.idx))
-
-                logging.info("source_tokens: {}".format([x.replace('\u0120', '_') for x in source_tokens]))
-                logging.info("source_ids: {}".format(' '.join(map(str, source_ids))))
-                logging.info("source_mask: {}".format(' '.join(map(str, source_mask))))
-
-                logging.info("target_tokens: {}".format([x.replace('\u0120', '_') for x in target_tokens]))
-                logging.info("target_ids: {}".format(' '.join(map(str, target_ids))))
-                logging.info("target_mask: {}".format(' '.join(map(str, target_mask))))
-
         features.append(
             InputFeatures(
                 example_index,

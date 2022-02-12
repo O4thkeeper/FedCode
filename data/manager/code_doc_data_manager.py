@@ -52,9 +52,9 @@ class CodeDocDataManager(BaseDataManager):
                 if len(data_list) == 0:
                     all_data = self._read_examples_from_jsonl(data_file)
                     data_list = [[] for _ in range(num_clients)]
-                    for i, example in tqdm(enumerate(all_data), desc="loading client %s's data" % idx):
+                    for i, example in tqdm(enumerate(all_data), desc="loading client data"):
                         data_list[partition_dict[str(i)]].append(example)
-
+                logging.info("process client %s load data" % idx)
                 data = data_list[idx]
                 if data_type == 'test':
                     data = random.sample(data, min(1000, len(data)))
