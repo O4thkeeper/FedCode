@@ -48,7 +48,7 @@ class CodeDocDataManager(BaseDataManager):
             else:
                 if len(data_list) == 0:
                     all_data = self._read_examples_from_jsonl(data_file)
-                    data_list = [[] * num_clients]
+                    data_list = [[] for _ in range(num_clients)]
                     for i, example in enumerate(all_data):
                         data_list[partition_dict[str(i)]].append(example)
 

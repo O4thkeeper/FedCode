@@ -15,7 +15,7 @@ ${py} -m data.manual_process.partition.quantity_partition \
   --partition_file data/store/codedoc/python/eval_partition.pk \
   --kmeans_num 0 \
   --beta 1 \
-  --min_size 1000
+  --min_size 200
 
 #${py} -m data.manual_process.partition.quantity_partition \
 #  --client_number 15 \

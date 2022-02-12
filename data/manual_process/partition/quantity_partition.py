@@ -57,6 +57,7 @@ def main():
         min_size = min([len(i) for i in partition_result])
         print("sample min size:%s" % min_size)
 
+
     result_dict = {str(j): i for i in range(len(partition_result)) for j in partition_result[i]}
 
     result_dict.update({"n_client": client_num, "beta": beta,
