@@ -34,7 +34,7 @@ class CodeDocTrainer:
     def get_model_params(self):
         return copy_state_dict(self.model.state_dict())
 
-    def set_model_params(self, model_parameters):
+    def set_model_params(self, model_parameters, index=None):
         self.model.load_state_dict(model_parameters)
 
     def set_global_model_params(self, params):
