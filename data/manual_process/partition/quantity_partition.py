@@ -45,6 +45,7 @@ def main():
 
     file_length = int(subprocess.getoutput("wc -l %s" % args.data_file).split()[0])
     index_list = [i for i in range(file_length)]
+    print("file length:%s" % file_length)
 
     print("start dirichlet distribution")
     min_size = 0
@@ -52,9 +53,9 @@ def main():
     while min_size < args.min_size:
         partition_result = [[] for _ in range(client_num)]
         partition_result = partition_class_samples_with_dirichlet_distribution(
-            file_length, beta, client_num, partition_result,
-            index_list)
+            file_length, beta, client_num, partition_result, index_list)
         min_size = min([len(i) for i in partition_result])
+        print("sample min size:%s" % min_size)
 
     result_dict = {str(j): i for i in range(len(partition_result)) for j in partition_result[i]}
 
