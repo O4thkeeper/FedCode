@@ -16,9 +16,8 @@ unzip python.zip
 #unzip javascript.zip
 #unzip go.zip
 #unzip php.zip
-rm *.zip
+#rm *.zip
 rm *.pkl
 
 ${py} ../../manual_process/load/codedoc.py
 rm -r */final
-cd ..
