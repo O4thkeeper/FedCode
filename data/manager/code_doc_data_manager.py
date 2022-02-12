@@ -4,6 +4,7 @@ import pickle
 import random
 
 from torch.utils.data import RandomSampler
+from tqdm import tqdm
 
 from data.manager.base.base_data_manager import BaseDataManager
 from data.preprocess.base.base_data_loader import BaseDataLoader
@@ -46,11 +47,12 @@ class CodeDocDataManager(BaseDataManager):
             state, res = self._load_data_loader_from_cache(idx, data_type)
             if state:
                 examples, features, dataset = res
+                logging.info("client %s load data from cache" % idx)
             else:
                 if len(data_list) == 0:
                     all_data = self._read_examples_from_jsonl(data_file)
                     data_list = [[] for _ in range(num_clients)]
-                    for i, example in enumerate(all_data):
+                    for i, example in tqdm(enumerate(all_data), desc="loading client %s's data" % idx):
                         data_list[partition_dict[str(i)]].append(example)
 
                 data = data_list[idx]
@@ -68,7 +70,7 @@ class CodeDocDataManager(BaseDataManager):
             loader_list.append(data_loader)
             data_num_list.append(data_num)
 
-            return loader_list, data_num_list
+        return loader_list, data_num_list
 
     def _read_examples_from_jsonl(self, filename):
         examples = []
