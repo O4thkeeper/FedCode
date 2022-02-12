@@ -2,7 +2,7 @@
 py=python
 
 cd data/store/codedoc || exit
-unzip dataset.zip
+#unzip dataset.zip
 wget https://s3.amazonaws.com/code-search-net/CodeSearchNet/v2/python.zip
 #wget https://s3.amazonaws.com/code-search-net/CodeSearchNet/v2/java.zip
 #wget https://s3.amazonaws.com/code-search-net/CodeSearchNet/v2/ruby.zip

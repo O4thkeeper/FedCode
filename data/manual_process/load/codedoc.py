@@ -28,7 +28,7 @@ for language in ['python']:
                     js = json.loads(line)
                     data[js['url']] = js
     for tag, data in [['train', train_data], ['valid', valid_data], ['test', test_data]]:
-        with open('{}/{}.jsonl'.format(language, tag), 'w') as f, open("{}/{}.txt".format(language, tag)) as f1:
+        with open('{}/{}.jsonl'.format(language, tag), 'w') as f, open("dataset/{}/{}.txt".format(language, tag)) as f1:
             for line in f1:
                 line = line.strip()
                 if line in data:
