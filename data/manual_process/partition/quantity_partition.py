@@ -61,7 +61,7 @@ def main():
 
     result_dict.update({"n_client": client_num, "beta": beta,
                         "partition_method": "niid_quantity_clients=%d_beta=%.1f" % (args.client_number, args.beta)})
-    print("result: ", str(result_dict))
+    print("result size: ", len(result_dict))
 
     with open(args.partition_file, "wb") as f:
         pickle.dump(result_dict, f)
