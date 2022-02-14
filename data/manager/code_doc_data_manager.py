@@ -47,7 +47,6 @@ class CodeDocDataManager(BaseDataManager):
             state, res = self._load_data_loader_from_cache(idx, data_type)
             if state:
                 examples, features, dataset = res
-                logging.info("client %s load data from cache" % idx)
             else:
                 if len(data_list) == 0:
                     all_data = self._read_examples_from_jsonl(data_file)

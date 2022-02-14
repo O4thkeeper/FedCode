@@ -15,12 +15,12 @@ ${py} -m main.codedoc_fedavg \
   --model_type 'roberta-base' \
   --model_name 'microsoft/codebert-base' \
   --do_lower_case True \
-  --train_batch_size 64 \
+  --train_batch_size 32 \
   --eval_batch_size 32 \
   --max_seq_length 256 \
   --max_target_length 128 \
   --learning_rate 5e-5 \
-  --beam_size 1000 \
+  --beam_size 10 \
   --epochs 1 \
   --output_dir "tmp/fedavg_codedoc_output/" \
   --do_train \
