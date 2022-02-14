@@ -64,6 +64,7 @@ class CodeDocTrainer:
         for idx in range(args.epochs):
             log_loss = 0.0
             step = 0
+            loss_list = []
             for batch in tqdm(self.train_dl, desc="training"):
 
                 batch = tuple(t.to(self.device) for t in batch)
@@ -85,9 +86,10 @@ class CodeDocTrainer:
                     global_step += 1
 
                 if step % 300 == 0:
-                    logging.info("step %s loss = %s" % (step, log_loss / step))
+                    loss_list.append(loss.item())
 
                 step += 1
+            logging.info("loss list with step 300 = %s" % (loss_list))
             logging.info("epoch %s loss = %s" % (idx, log_loss / step))
             tr_loss += log_loss
 
