@@ -4,7 +4,7 @@ py=python
 ${py} -m main.codedoc_fedavg \
   --client_num_in_total 15 \
   --client_num_per_round 5 \
-  --comm_round 9 \
+  --comm_round 12 \
   --dataset "codedoc" \
   --train_data_file "data/store/codedoc/python/train.jsonl" \
   --train_partition_file "data/store/codedoc/python/train_partition.pk" \
@@ -23,6 +23,6 @@ ${py} -m main.codedoc_fedavg \
   --beam_size 10 \
   --epochs 3 \
   --output_dir "tmp/fedavg_codedoc_output/" \
-  -cache_dir "cache/codedoc" \
+  --cache_dir "cache/codedoc" \
   --do_train \
   --do_eval
