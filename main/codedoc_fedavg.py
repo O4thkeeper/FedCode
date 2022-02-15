@@ -65,8 +65,7 @@ if __name__ == "__main__":
         server = server_func(clients, None, None, args, device, trainer)
         server.run()
 
-        model.save_pretrained('cache/model/codedoc_fedavg')
-        tokenizer.save_pretrained('cache/model/codedoc_fedavg')
+        torch.save(model.state_dict(),'cache/model/codedoc_fedavg/model.pt')
 
     if args.do_test:
         pass
