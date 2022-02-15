@@ -428,8 +428,7 @@ def add_code_doc_args(parser):
 
     parser.add_argument('--server_local_steps', type=int, default=1)
 
-    parser.add_argument('--cache_dir', type=str, default="cache/", metavar='N',
-                        help='cache file path')
+    parser.add_argument('--cache_dir', type=str, default="cache/")
 
     parser.add_argument('--do_train', action="store_true")
 

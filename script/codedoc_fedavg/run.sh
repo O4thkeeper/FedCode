@@ -21,7 +21,8 @@ ${py} -m main.codedoc_fedavg \
   --max_target_length 128 \
   --learning_rate 5e-5 \
   --beam_size 10 \
-  --epochs 1 \
+  --epochs 3 \
   --output_dir "tmp/fedavg_codedoc_output/" \
+  -cache_dir "cache/codedoc" \
   --do_train \
   --do_eval

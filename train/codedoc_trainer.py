@@ -65,7 +65,8 @@ class CodeDocTrainer:
             log_loss = 0.0
             step = 0
             loss_list = []
-            for batch in tqdm(self.train_dl, desc="training"):
+            bar = tqdm(self.train_dl, total=len(self.train_dl))
+            for batch in bar:
 
                 batch = tuple(t.to(self.device) for t in batch)
                 source_ids, source_mask, target_ids, target_mask = batch
@@ -77,6 +78,7 @@ class CodeDocTrainer:
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
+                bar.set_description("epoch {} loss {}".format(idx, loss.item()))
 
                 log_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:
@@ -92,9 +94,6 @@ class CodeDocTrainer:
             logging.info("loss list with step 300 = %s" % (loss_list))
             logging.info("epoch %s loss = %s" % (idx, log_loss / step))
             tr_loss += log_loss
-
-            if args.do_eval:
-                self.eval()
 
         model.cpu()
 

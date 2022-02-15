@@ -47,12 +47,8 @@ if __name__ == "__main__":
         train_loader_list, train_data_num_list = manager.load_federated_data(False, 'train', args.train_data_file,
                                                                              args.train_batch_size,
                                                                              args.train_partition_file)
-        eval_loader_list, eval_data_num_list = manager.load_federated_data(False, 'eval', args.eval_data_file,
-                                                                           args.eval_batch_size,
-                                                                           args.eval_partition_file)
-        test_loader_list, test_data_num_list = manager.load_federated_data(False, 'test', args.eval_data_file,
-                                                                           args.eval_batch_size,
-                                                                           args.eval_partition_file)
+        eval_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
+        test_loader = manager.load_federated_data(True, 'test', args.eval_data_file, args.eval_batch_size)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
@@ -60,12 +56,11 @@ if __name__ == "__main__":
 
         trainer = CodeDocTrainer(args, device, model, tokenizer)
 
-        clients = client_func(train_loader_list, train_data_num_list, test_loader_list, device, args, trainer,
-                              eval_loader_list)
-        server = server_func(clients, None, None, args, device, trainer)
+        clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer, None)
+        server = server_func(clients, None, test_loader, args, device, trainer, eval_loader)
         server.run()
 
-        torch.save(model.state_dict(),'cache/model/codedoc_fedavg/model.pt')
+        torch.save(model.state_dict(), 'cache/model/codedoc_fedavg/model.pt')
 
     if args.do_test:
         pass

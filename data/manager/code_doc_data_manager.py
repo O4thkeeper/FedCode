@@ -3,7 +3,7 @@ import logging
 import pickle
 import random
 
-from torch.utils.data import RandomSampler
+from torch.utils.data import RandomSampler, SequentialSampler
 from tqdm import tqdm
 
 from data.manager.base.base_data_manager import BaseDataManager
@@ -25,10 +25,12 @@ class CodeDocDataManager(BaseDataManager):
             examples, features, dataset = res
         else:
             data = self._read_examples_from_jsonl(data_file)
+            if data_type == 'test':
+                data = random.sample(data, min(1000, len(data)))
             examples, features, dataset = self.preprocessor.transform(data, data_type)
             with open(res, "wb") as handle:
                 pickle.dump((examples, features, dataset), handle)
-        train_sampler = RandomSampler(dataset)
+        train_sampler = SequentialSampler(dataset)
         data_loader = BaseDataLoader(examples, features, dataset,
                                      sampler=train_sampler,
                                      batch_size=batch_size)
