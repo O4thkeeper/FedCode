@@ -69,7 +69,9 @@ class CodeSearchTrainer:
         for idx in range(args.epochs):
             log_loss = 0.0
             step = 0
-            for batch in tqdm(self.train_dl, desc="training"):
+            loss_list = []
+            bar = tqdm(self.train_dl, total=len(self.train_dl))
+            for batch in bar:
 
                 batch = tuple(t.to(self.device) for t in batch)
                 inputs = {'input_ids': batch[0],
@@ -84,6 +86,7 @@ class CodeSearchTrainer:
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
+                bar.set_description("epoch {} loss {}".format(idx, loss.item()))
 
                 log_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:
@@ -92,98 +95,17 @@ class CodeSearchTrainer:
                     self.model.zero_grad()
                     global_step += 1
 
+                if step % 300 == 0:
+                    loss_list.append(loss.item())
+
                 step += 1
+            logging.info("loss list with step 300 = %s" % (loss_list))
             logging.info("epoch %s loss = %s" % (idx, log_loss / step))
             tr_loss += log_loss
 
         self.model.cpu()
 
         return global_step, tr_loss / global_step
-
-    # def eval(self):
-    #     # Loop to handle MNLI double evaluation (matched, mis-matched)
-    #     eval_task_names = (args.task_name,)
-    #     eval_outputs_dirs = (args.output_dir,)
-    #
-    #     results = {}
-    #     for eval_task, eval_output_dir in zip(eval_task_names, eval_outputs_dirs):
-    #         if (mode == 'dev'):
-    #             eval_dataset = load_and_cache_examples(args, eval_task, tokenizer, ttype='dev')
-    #         elif (mode == 'test'):
-    #             eval_dataset, instances = load_and_cache_examples(args, eval_task, tokenizer, ttype='test')
-    #
-    #         if not os.path.exists(eval_output_dir) and args.local_rank in [-1, 0]:
-    #             os.makedirs(eval_output_dir)
-    #
-    #         args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
-    #         # Note that DistributedSampler samples randomly
-    #         eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(
-    #             eval_dataset)
-    #         eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
-    #
-    #         # Eval!
-    #         logging.info("***** Running evaluation {} *****".format(prefix))
-    #         logging.info("  Num examples = %d", len(eval_dataset))
-    #         logging.info("  Batch size = %d", args.eval_batch_size)
-    #         eval_loss = 0.0
-    #         nb_eval_steps = 0
-    #         preds = None
-    #         out_label_ids = None
-    #         for batch in tqdm(eval_dataloader, desc="Evaluating"):
-    #             self.model.eval()
-    #             batch = tuple(t.to(args.device) for t in batch)
-    #
-    #             with torch.no_grad():
-    #                 inputs = {'input_ids': batch[0],
-    #                           'attention_mask': batch[1],
-    #                           'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
-    #                           # XLM don't use segment_ids
-    #                           'labels': batch[3]}
-    #
-    #                 outputs = model(**inputs)
-    #                 tmp_eval_loss, logits = outputs[:2]
-    #
-    #                 eval_loss += tmp_eval_loss.mean().item()
-    #             nb_eval_steps += 1
-    #             if preds is None:
-    #                 preds = logits.detach().cpu().numpy()
-    #                 out_label_ids = inputs['labels'].detach().cpu().numpy()
-    #             else:
-    #
-    #                 preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-    #
-    #                 out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-    #         # eval_accuracy = accuracy(preds,out_label_ids)
-    #         eval_loss = eval_loss / nb_eval_steps
-    #         if args.output_mode == "classification":
-    #             preds_label = np.argmax(preds, axis=1)
-    #         result = compute_metrics(eval_task, preds_label, out_label_ids)
-    #         results.update(result)
-    #         if (mode == 'dev'):
-    #             output_eval_file = os.path.join(eval_output_dir, "eval_results.txt")
-    #             with open(output_eval_file, "a+") as writer:
-    #                 logging.info("***** Eval results {} *****".format(prefix))
-    #                 writer.write('evaluate %s\n' % checkpoint)
-    #                 for key in sorted(result.keys()):
-    #                     logging.info("  %s = %s", key, str(result[key]))
-    #                     writer.write("%s = %s\n" % (key, str(result[key])))
-    #         elif (mode == 'test'):
-    #             output_test_file = args.test_result_dir
-    #             output_dir = os.path.dirname(output_test_file)
-    #             if not os.path.exists(output_dir):
-    #                 os.makedirs(output_dir)
-    #             with open(output_test_file, "w") as writer:
-    #                 logging.info("***** Output test results *****")
-    #                 all_logits = preds.tolist()
-    #                 for i, logit in tqdm(enumerate(all_logits), desc='Testing'):
-    #                     instance_rep = '<CODESPLIT>'.join(
-    #                         [item.encode('ascii', 'ignore').decode('ascii') for item in instances[i]])
-    #
-    #                     writer.write(instance_rep + '<CODESPLIT>' + '<CODESPLIT>'.join([str(l) for l in logit]) + '\n')
-    #                 for key in sorted(result.keys()):
-    #                     print("%s = %s" % (key, str(result[key])))
-    #
-    #     return results
 
     def test(self):
         self.model.to(self.device)

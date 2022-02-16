@@ -17,7 +17,8 @@ class FedAVGServerManager():
 
             model_params_list, sample_num_list = self.clients.train(client_indexes, current_model)
             self.aggregator.aggregate(model_params_list, sample_num_list)
-            self.aggregator.eval_global_model()
+            if self.args.do_eval:
+                self.aggregator.eval_global_model()
 
     def test(self):
         self.aggregator.test_on_server()
