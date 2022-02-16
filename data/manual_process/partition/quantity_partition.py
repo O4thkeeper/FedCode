@@ -43,7 +43,7 @@ def main():
     client_num = args.client_number
     beta = args.beta
 
-    file_length = int(subprocess.getoutput("wc -l %s" % args.data_file).split()[0])
+    file_length = int(subprocess.getoutput("wc -l %s" % args.data_file).split()[0]) + 1
     index_list = [i for i in range(file_length)]
     print("file length:%s" % file_length)
 
@@ -56,7 +56,6 @@ def main():
             file_length, beta, client_num, partition_result, index_list)
         min_size = min([len(i) for i in partition_result])
         print("sample min size:%s" % min_size)
-
 
     result_dict = {str(j): i for i in range(len(partition_result)) for j in partition_result[i]}
 
