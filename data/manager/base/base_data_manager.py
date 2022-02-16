@@ -30,7 +30,7 @@ class BaseDataManager(ABC):
     def _load_data_loader_from_cache(self, client_id, data_type):
         args = self.args
         if not os.path.exists(args.cache_dir):
-            os.mkdir(args.cache_dir)
+            os.makedirs(args.cache_dir)
         cached_features_file = os.path.join(args.cache_dir,
                                             args.model_type + "_" + args.model_name.split("/")[-1] + "_cached_"
                                             + str(args.max_seq_length) + "_" + args.dataset + "_"

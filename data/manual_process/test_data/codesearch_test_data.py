@@ -11,7 +11,7 @@ def format_str(string):
         string = string.replace(char, ' ')
     return string
 
-
+# todo delete
 def mrr_test_data(language, test_batch_size, data_dir):
     path = os.path.join(data_dir, '{}_test_0.jsonl.gz'.format(language))
     print(path)

@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from data.manual_process.load.base.abstract_data_loader import BaseRawDataLoader
 
-
+# todo delete file
 class TextClassificationRawDataLoader(BaseRawDataLoader):
     def __init__(self, data_path):
         super(TextClassificationRawDataLoader, self).__init__(data_path)

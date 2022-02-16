@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-
+# todo delete file
 class BaseRawDataLoader(ABC):
     @abstractmethod
     def __init__(self, data_path):

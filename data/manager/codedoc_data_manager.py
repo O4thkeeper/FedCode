@@ -30,9 +30,9 @@ class CodeDocDataManager(BaseDataManager):
             examples, features, dataset = self.preprocessor.transform(data, data_type)
             with open(res, "wb") as handle:
                 pickle.dump((examples, features, dataset), handle)
-        train_sampler = SequentialSampler(dataset)
+        sampler = SequentialSampler(dataset)
         data_loader = BaseDataLoader(examples, features, dataset,
-                                     sampler=train_sampler,
+                                     sampler=sampler,
                                      batch_size=batch_size)
         return data_loader
 
@@ -63,9 +63,9 @@ class CodeDocDataManager(BaseDataManager):
                 with open(res, "wb") as handle:
                     pickle.dump((examples, features, dataset), handle)
 
-            train_sampler = RandomSampler(dataset)
+            sampler = RandomSampler(dataset)
             data_loader = BaseDataLoader(examples, features, dataset,
-                                         sampler=train_sampler,
+                                         sampler=sampler,
                                          batch_size=batch_size)
             data_num = len(examples)
             loader_list.append(data_loader)

@@ -6,7 +6,7 @@ from transformers import RobertaConfig, RobertaForSequenceClassification, Robert
 
 from data.manager.base.abstract_data_manager import AbstractDataManager
 from data.manager.code_search_data_manager import CodeSearchDataManager
-from data.preprocess.code_search_preprocessor import CodeSearchPreprocessor
+from data.preprocess.code_search_preprocessor_deprecated import CodeSearchPreprocessor
 from main.initialize import add_code_search_args, set_seed, get_fl_algorithm_initializer
 from train.codesearch_trainer import CodeSearchTrainer
 

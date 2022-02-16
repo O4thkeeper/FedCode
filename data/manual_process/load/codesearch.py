@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from data.manual_process.load.base.base_raw_data_loader import TextClassificationRawDataLoader
 
-
+# todo delete file
 class CodeSearchDataLoader(TextClassificationRawDataLoader):
     def __init__(self, data_path, language, data_type):
         super().__init__(data_path)

@@ -31,14 +31,7 @@ class CodeDocPreprocessor(BasePreprocessor):
 class InputFeatures(object):
     """A single training/test features for a example."""
 
-    def __init__(self,
-                 example_id,
-                 source_ids,
-                 target_ids,
-                 source_mask,
-                 target_mask,
-
-                 ):
+    def __init__(self, example_id, source_ids, target_ids, source_mask, target_mask):
         self.example_id = example_id
         self.source_ids = source_ids
         self.target_ids = target_ids

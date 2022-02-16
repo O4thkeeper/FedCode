@@ -3,7 +3,7 @@ import argparse
 import json
 import numpy as np
 
-
+# todo delete file
 def partition_class_samples_with_dirichlet_distribution(N, alpha, client_num, idx_batch, idx_k):
     """
     params

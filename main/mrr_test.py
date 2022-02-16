@@ -9,9 +9,9 @@ from more_itertools import chunked
 from tqdm import tqdm
 from transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
-from data.manager.code_search_data_manager import CodeSearchDataManager
+from data.manager.codesearch_data_manager import Example, CodeSearchDataManager
 from data.preprocess.base.base_data_loader import BaseDataLoader
-from data.preprocess.code_search_preprocessor import CodeSearchPreprocessor
+from data.preprocess.codesearch_preprocessor import CodeSearchPreprocessor
 from main.initialize import add_mrr_test_args, set_seed
 
 DATA_DIR = '../data/codesearch_data'
@@ -44,10 +44,10 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             for dd in batch_data:
                 _, code_token = dd
                 code_token = ' '.join([format_str(token) for token in code_token])
-                example = (doc_token, code_token, str(1))
+                example = Example(d_idx, doc_token, code_token, str(1))
                 examples.append(example)
 
-        examples, features, dataset = preprocessor.temp_transform(examples)
+        examples, features, dataset = preprocessor.transform(examples)
         data_loader = BaseDataLoader(examples, features, dataset,
                                      batch_size=args.batch_size,
                                      num_workers=0,
@@ -120,9 +120,8 @@ if __name__ == "__main__":
     model = model_class.from_pretrained(args.model_name, config=config)
     model.to(device)
 
-    preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
-    manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-                                    args.batch_size, None)
+    preprocessor = CodeSearchPreprocessor(args, tokenizer)
+    manager = CodeSearchDataManager(args, preprocessor)
 
-    test_raw_examples = manager.load_mrr_test_data()
+    test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
     process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size)

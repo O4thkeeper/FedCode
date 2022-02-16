@@ -1,12 +1,13 @@
 import argparse
 import logging
+import os.path
 
 import torch
 from torch import nn
 from transformers import RobertaConfig, RobertaTokenizer, RobertaModel
 
-from data.manager.code_doc_data_manager import CodeDocDataManager
-from data.preprocess.code_doc_preprocessor import CodeDocPreprocessor
+from data.manager.codedoc_data_manager import CodeDocDataManager
+from data.preprocess.codedoc_preprocessor import CodeDocPreprocessor
 from main.initialize import set_seed, get_fl_algorithm_initializer, add_code_doc_args
 from model.seq2seq_model import Seq2Seq
 from train.codedoc_trainer import CodeDocTrainer
@@ -60,7 +61,10 @@ if __name__ == "__main__":
         server = server_func(clients, None, test_loader, args, device, trainer, eval_loader)
         server.run()
 
-        torch.save(model.state_dict(), 'cache/model/codedoc_fedavg/model.pt')
+        save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        torch.save(model.state_dict(), os.path.join(save_dir, 'model.pt'))
 
     if args.do_test:
         pass
