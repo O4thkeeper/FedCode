@@ -5,8 +5,6 @@ import torch
 from transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
 from data.manager.base.abstract_data_manager import AbstractDataManager
-from data.manager.code_search_data_manager import CodeSearchDataManager
-from data.preprocess.code_search_preprocessor_deprecated import CodeSearchPreprocessor
 from main.initialize import add_code_search_args, set_seed, get_fl_algorithm_initializer
 from train.codesearch_trainer import CodeSearchTrainer
 
@@ -40,9 +38,10 @@ if __name__ == "__main__":
         server_model = model_class.from_pretrained(args.model_name, config=config)
 
         # data
-        preprocessor = CodeSearchPreprocessor(args=args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
-        manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-                                        args.train_batch_size, args.partition_file)
+        # todo complete
+        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
+        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
+        #                                 args.train_batch_size, args.partition_file)
 
         train_loader_list, train_data_num_list = manager.load_federated_data(server=False)
         server_data_loader = manager.load_path_data(args.server_data)
@@ -67,9 +66,9 @@ if __name__ == "__main__":
         model = model_class.from_pretrained(args.model_name, config=config)
         model.to(device)
 
-        preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
-        manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-                                        args.train_batch_size, args.partition_file)
+        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
+        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
+        #                                 args.train_batch_size, args.partition_file)
         test_loader = manager.load_test_data()
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)

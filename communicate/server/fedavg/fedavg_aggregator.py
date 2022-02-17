@@ -35,8 +35,6 @@ class FedAVGAggregator(BaseAggregator):
         self.set_global_model_params(averaged_params)
         self.trainer.set_model_params(averaged_params)
 
-        # filename = os.path.join('cache', str(time.time()))
-        # torch.save(averaged_params, filename)
 
     def test_on_server(self):
         self.trainer.test()
