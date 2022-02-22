@@ -23,8 +23,8 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         self.init_weights()
 
         self.h_linear = HyperClassifier(config.hidden_size, 2)
-        self.classifier.apply(_weights_init)
-        self.h_linear.apply(_weights_init)
+        # self.classifier.apply(_weights_init)
+        # self.h_linear.apply(_weights_init)
 
     # @add_start_docstrings_to_model_forward(ROBERTA_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
     # @add_code_sample_docstrings(
@@ -69,9 +69,9 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         return sequence_output
 
-    def forward_local_bias(self, feat):
+    def forward_local_bias(self, feat, label_weight):
         cls_feat = feat[:, 0, :]
-        clf_w = self.h_linear(cls_feat)
+        clf_w = self.h_linear(label_weight)
         x = torch.matmul(cls_feat, clf_w)
         return x
 
@@ -116,13 +116,19 @@ class HyperClassifier(nn.Module):
         super(HyperClassifier, self).__init__()
         self.f_size = f_size
         self.label_count = label_count
-        self.fc1 = nn.Linear(f_size, f_size)
-        self.fc2 = nn.Linear(f_size, f_size * label_count)
+        # self.fc1 = nn.Linear(f_size, f_size)
+        # self.fc2 = nn.Linear(f_size, f_size * label_count)
+        self.fc1 = nn.Linear(self.label_count, self.f_size)
+        self.fc2 = nn.Linear(self.f_size, self.label_count * self.f_size)
 
-    def forward(self, feat):
-        h_in = F.relu(self.fc1(feat))
+    def forward(self, x):
+        # h_in = F.relu(self.fc1(feat))
+        # h_final = self.fc2(h_in)
+        # h_final = h_final[0, :].view(-1, self.label_count)
+
+        h_in = F.relu(self.fc1(x))
         h_final = self.fc2(h_in)
-        h_final = h_final[0, :].view(-1, self.label_count)
+        h_final = h_final.view(-1, self.label_count)
 
         return h_final
 

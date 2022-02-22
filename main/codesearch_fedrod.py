@@ -1,10 +1,12 @@
 import argparse
 import logging
+import os
 
 import torch
 from transformers import RobertaConfig, RobertaTokenizer
 
-from data.manager.base.abstract_data_manager import AbstractDataManager
+from data.manager.codesearch_data_manager import CodeSearchDataManager
+from data.preprocess.codesearch_preprocessor import CodeSearchPreprocessor
 from main.initialize import set_seed, add_code_search_args, get_fl_algorithm_initializer
 from model.roberta_model import RobertaForSequenceClassification
 from train.codesearch_fedrod_trainer import CodeSearchFedrodTrainer
@@ -27,26 +29,30 @@ if __name__ == "__main__":
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
     if args.do_train:
-        # dataset attributes
-        attributes = AbstractDataManager.load_attributes(args.data_file)
-        num_labels = len(attributes["label_vocab"])
-        args.num_labels = num_labels
-
-        config = config_class.from_pretrained(args.model_name, num_labels=num_labels, finetuning_task='codesearch')
+        args.num_labels = 2
+        config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
         model = model_class.from_pretrained(args.model_name, config=config)
         model.to(device)
 
         # data
-        # todo complete
+        preprocessor = CodeSearchPreprocessor(args, tokenizer)
+        manager = CodeSearchDataManager(args, preprocessor)
 
-        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=attributes["label_vocab"], tokenizer=tokenizer)
-        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-        #                                 args.train_batch_size, args.partition_file)
+        train_loader_list, train_data_num_list = manager.load_federated_data(False, 'train', args.train_data_file,
+                                                                             args.train_batch_size,
+                                                                             args.train_partition_file)
 
-        train_loader_list, train_data_num_list, cls_num_list = manager.load_federated_data(server=False, count=True)
-        args.cls_num_list = cls_num_list
-        eval_data_loader = manager.load_path_data(args.eval_data_file)
+        cls_num_list = []
+        for loader in train_loader_list:
+            examples = loader.examples
+            cls_num = [0, 0]
+            for example in examples:
+                cls_num[int(example.label)] += 1
+            cls_num_list.append(cls_num)
+        args.label_weight = [torch.Tensor(cls_num) / sum(cls_num) for cls_num in cls_num_list]
+
+        eval_data_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
@@ -62,22 +68,8 @@ if __name__ == "__main__":
         server = server_func(clients, None, eval_data_loader, None, args, device, trainer)
         server.run()
 
-        model.save_pretrained('cache/model/fedrod')
-        tokenizer.save_pretrained('cache/model/fedrod')
-
-    if args.do_test:
-        config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
-        tokenizer = tokenizer_class.from_pretrained(args.model_type)
-        model = model_class.from_pretrained(args.model_name, config=config)
-        model.to(device)
-
-        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
-        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-        #                                 args.train_batch_size, args.partition_file)
-        test_loader = manager.load_test_data()
-
-        fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
-        server_func = fl_algorithm(server=True)
-        trainer = CodeSearchFedrodTrainer(args, device, model)
-        server = server_func(None, None, test_loader, args, device, trainer)
-        server.test()
+        save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        model.save_pretrained(save_dir)
+        tokenizer.save_pretrained(save_dir)

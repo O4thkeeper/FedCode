@@ -58,25 +58,3 @@ if __name__ == "__main__":
             os.makedirs(save_dir)
         model.save_pretrained(save_dir)
         tokenizer.save_pretrained(save_dir)
-
-    if args.do_test:
-        pass
-        # config = config_class.from_pretrained('cache/model/config.json', num_labels=num_labels,
-        #                                       finetuning_task='codesearch')
-        # tokenizer = tokenizer_class.from_pretrained('roberta-base')
-        # model = model_class.from_pretrained('cache/model/pytorch_model.bin', config=config)
-        # config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
-        # tokenizer = tokenizer_class.from_pretrained(args.model_type)
-        # model = model_class.from_pretrained(args.model_name, config=config)
-        # model.to(device)
-        #
-        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
-        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-        #                                 args.train_batch_size, args.partition_file)
-        # test_loader = manager.load_test_data()
-        #
-        # fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
-        # server_func = fl_algorithm(server=True)
-        # trainer = CodeSearchTrainer(args, device, model)
-        # server = server_func(None, None, test_loader, args, device, trainer)
-        # server.test()

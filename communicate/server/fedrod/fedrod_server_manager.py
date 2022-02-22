@@ -1,7 +1,6 @@
 import logging
 
 
-# todo server manager seems the same among all fed algorithm
 class FedRodServerManager():
     def __init__(self, aggregator, clients, args):
         self.client_num = args.client_num_in_total

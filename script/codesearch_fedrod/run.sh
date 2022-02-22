@@ -6,9 +6,9 @@ ${py} -m main.codesearch_fedrod \
   --client_num_per_round 5 \
   --comm_round 9 \
   --dataset "codesearch" \
-  --data_file "data/store/codesearch/python_train.h5" \
-  --data_type "train" \
-  --partition_file "data/store/codesearch/python_train_partition.h5" \
+  --language "python" \
+  --train_data_file "data/store/codesearch/train_valid/python/train.txt" \
+  --train_partition_file "data/store/codesearch/train_valid/python/train_partition.pk" \
   --partition_method niid_quantity_clients=15_beta=1.0 \
   --eval_data_file "data/store/codesearch/train_valid/python/valid.txt" \
   --fl_algorithm "FedRod" \
@@ -21,5 +21,6 @@ ${py} -m main.codesearch_fedrod \
   --learning_rate 5e-5 \
   --epochs 1 \
   --output_dir "tmp/fedrod_codesearch_output/" \
+  --cache_dir "cache/codesearch/python" \
   --do_train
 #  --do_eval
