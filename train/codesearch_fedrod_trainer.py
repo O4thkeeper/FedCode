@@ -172,9 +172,8 @@ class CodeSearchFedrodTrainer:
         preds_global = None
         preds_local = None
         out_label_ids = None
-        local_loss_fn = torch.nn.CrossEntropyLoss()
-        # todo cls_num_list is train data's now
-        global_loss_fn = BSMLoss(cls_num_list=self.cls_num_list[index])
+        local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
+        global_loss_fn = BSMLoss(self.cls_num_list[index].to(self.device)).to(self.device)
         for batch in tqdm(self.valid_dl, desc="Evaluating"):
             self.model.eval()
             batch = tuple(t.to(self.device) for t in batch)
@@ -187,7 +186,8 @@ class CodeSearchFedrodTrainer:
 
                 sequence_output = self.model(**inputs)
                 logits_global = self.model.forward_global(sequence_output)
-                logits_local = self.model.forward_local_bias(sequence_output)
+                logits_local = self.model.forward_local_bias(sequence_output,
+                                                             self.args.label_weight[index].to(self.device))
                 labels = batch[3]
                 global_loss = global_loss_fn(logits_global.view(-1, self.num_labels), labels.view(-1))
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))

@@ -7,12 +7,13 @@ import numpy as np
 import torch
 from more_itertools import chunked
 from tqdm import tqdm
-from transformers import RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
+from transformers import RobertaConfig, RobertaTokenizer
 
 from data.manager.codesearch_data_manager import Example, CodeSearchDataManager
 from data.preprocess.base.base_data_loader import BaseDataLoader
 from data.preprocess.codesearch_preprocessor import CodeSearchPreprocessor
 from main.initialize import add_mrr_test_args, set_seed
+from model.roberta_model import RobertaForSequenceClassification, HyperClassifier
 
 
 def format_str(string):
@@ -21,7 +22,8 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size=1000):
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, h_linear_list,
+                          label_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
 
@@ -29,8 +31,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     data = data[idxs]
     batched_data = chunked(data, test_batch_size)
 
-    ranks = []
-    num_batch = 0
+    global_ranks = []
+    local_ranks = [[] for _ in range(len(h_linear_list))]
 
     for batch_idx, batch_data in enumerate(batched_data):
         if len(batch_data) < test_batch_size:
@@ -52,28 +54,39 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        all_logits = test(args, data_loader, test_model)
+        global_preds, local_preds = test(args, data_loader, test_model, h_linear_list, label_weight_list)
 
-        batched_logits = chunked(all_logits, test_batch_size)
+        batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
-            num_batch += 1
             correct_score = batch_data[batch_idx][-1]
             scores = np.array([data[-1] for data in batch_data])
             rank = np.sum(scores >= correct_score)
-            ranks.append(rank)
+            global_ranks.append(rank)
+        for i, preds in enumerate(local_preds):
+            batched_logits = chunked(preds, test_batch_size)
+            for batch_idx, batch_data in enumerate(batched_logits):
+                correct_score = batch_data[batch_idx][-1]
+                scores = np.array([data[-1] for data in batch_data])
+                rank = np.sum(scores >= correct_score)
+                local_ranks[i].append(rank)
 
-    mean_mrr = np.mean(1.0 / np.array(ranks))
-    logging.info("mrr: %s" % (mean_mrr))
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
     with open(os.path.join(args.output_dir, 'mrr_test_result.txt'), 'a') as f:
+        global_mrr = np.mean(1.0 / np.array(global_ranks))
+        logging.info("global mrr: %s" % (global_mrr))
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
-        f.write("rank list:%s\n" % ranks)
-        f.write("mrr: %s\n\n" % (mean_mrr))
+        f.write("global mrr: %s\n\n" % (global_mrr))
+        for i, ranks in enumerate(local_ranks):
+            mrr = np.mean(1.0 / np.array(ranks))
+            logging.info("client %s mrr: %s" % (i, mrr))
+            f.write("client %s mrr: %s\n\n" % (i, mrr))
 
 
-def test(args, data_loader, model):
-    preds = None
+def test(args, data_loader, model, h_linear_list, label_weight_list):
+    global_preds = None
+    local_preds = []
+    # todo use array instead of list
     for batch in tqdm(data_loader, desc="Testing"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -84,14 +97,24 @@ def test(args, data_loader, model):
                       'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
                       'labels': batch[3]}
 
-            outputs = model(**inputs)
-            logits = outputs['logits']
-        if preds is None:
-            preds = logits.detach().cpu().numpy()
-        else:
-            preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+            sequence_output = model(**inputs)
+            global_logits = model.forward_global(sequence_output)
+            local_logits_list = []
+            for i, h_linear in enumerate(h_linear_list):
+                h_linear.to(args.device)
+                local_logits = torch.matmul(sequence_output[:, 0:], h_linear(label_weight_list[i]))
+                local_logits_list.append(local_logits)
 
-    return preds.tolist()
+        if not global_preds:
+            global_preds = global_logits.detach().cpu().numpy()
+            for local_logits in local_logits_list:
+                local_preds.append(local_logits.detach().cpu().numpy())
+        else:
+            global_preds = np.append(global_preds, global_logits.detach().cpu().numpy(), axis=0)
+            for i, local_logits in enumerate(local_logits_list):
+                local_preds[i] = np.append(local_preds[i], local_logits_list[i].detach().cpu().numpy(), axis=0)
+
+    return global_preds.tolist(), [preds.tolist() for preds in local_preds]
 
 
 if __name__ == "__main__":
@@ -118,8 +141,15 @@ if __name__ == "__main__":
     model = model_class.from_pretrained(args.model_name, config=config)
     model.to(device)
 
+    h_linear_list = [HyperClassifier(config.hidden_size, 2) for _ in range(15)]
+    h_linear_state_list = torch.load(os.path.join(args.model_name, 'h_linear.pt'))
+    for i, state in enumerate(h_linear_state_list):
+        h_linear_list[i].load_state_dict(state)
+    label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
+
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size)
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, h_linear_list,
+                          label_weight_list)
