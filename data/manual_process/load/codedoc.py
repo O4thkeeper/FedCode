@@ -1,8 +1,9 @@
 import json
 import os
 
-# for language in ['ruby', 'go', 'java', 'javascript', 'php', 'python']:
-for language in ['python']:
+for language in ['ruby', 'go', 'java', 'javascript', 'php', 'python']:
+    if not os.path.exists(language + '.zip'):
+        continue
     print(language)
     train, valid, test = [], [], []
     for root, dirs, files in os.walk(language + '/final'):
