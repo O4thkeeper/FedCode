@@ -1,7 +1,5 @@
-#py=/Users/fenghao/Documents/pythonWork/venv/bin/python
-py=python
 
-${py} -m main.codesearch_fedrod \
+python -m main.codesearch_fedrod \
   --client_num_in_total 15 \
   --client_num_per_round 5 \
   --comm_round 9 \
@@ -23,4 +21,3 @@ ${py} -m main.codesearch_fedrod \
   --output_dir "tmp/fedrod_codesearch_output/" \
   --cache_dir "cache/codesearch/python" \
   --do_train
-#  --do_eval

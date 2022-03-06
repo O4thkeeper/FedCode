@@ -95,13 +95,13 @@ class CodeSearchFedrodTrainer:
                 optimizer.step()
                 scheduler.step()
                 ghead_optimizer.step()
-                self.model.zero_grad()
 
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
                 local_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
                 log_loss[1] += local_loss.item()
                 phead_optimizer.step()
+
                 self.model.zero_grad()
 
                 if step % 100 == 0:

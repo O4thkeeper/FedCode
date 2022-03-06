@@ -71,7 +71,6 @@ if __name__ == "__main__":
         save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        model.save_pretrained(save_dir)
-        tokenizer.save_pretrained(save_dir)
+        torch.save(model.state_dict(), os.path.join(save_dir, "model.pt"))
         torch.save(trainer.h_linear_state_list, os.path.join(save_dir, "h_linear.pt"))
         torch.save(args.label_weight, os.path.join(save_dir, "label_weight.pt"))
