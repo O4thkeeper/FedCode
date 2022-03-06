@@ -45,8 +45,7 @@ def set_seed(seed):
     random.seed(seed)
 
 
-def  add_code_search_args(parser):
-
+def add_code_search_args(parser):
     parser.add_argument('--dataset', type=str, default='codesearch')
 
     parser.add_argument('--language', type=str, default='python')
@@ -91,7 +90,7 @@ def  add_code_search_args(parser):
 
     parser.add_argument('--client_num_in_total', type=int, default=15)
 
-    parser.add_argument('--client_num_per_round', type=int,default=5)
+    parser.add_argument('--client_num_per_round', type=int, default=5)
 
     parser.add_argument('--epochs', type=int, default=1)
 
@@ -167,13 +166,13 @@ def add_code_doc_args(parser):
 
     parser.add_argument('--server_data', type=str, default='')
 
-    parser.add_argument('--partition_method', type=str)
+    parser.add_argument('--partition_method', type=str, default='')
 
     parser.add_argument('--model_type', type=str, default='roberta-base')
 
     parser.add_argument('--model_name', type=str, default='microsoft/codebert-base')
 
-    parser.add_argument('--load_model',type=str,default='')
+    parser.add_argument('--load_model', type=str, default='')
 
     parser.add_argument('--do_lower_case', type=bool, default=True)
 
