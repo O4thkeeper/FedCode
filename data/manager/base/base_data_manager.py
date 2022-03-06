@@ -13,14 +13,14 @@ class BaseDataManager(ABC):
     def load_centralized_data(self):
         pass
 
-    def load_federated_data(self, server, data_type, data_file, batch_size, partition_file=None):
+    def load_federated_data(self, server, data_type, data_file, batch_size, partition_file=None, max_size=None):
         if server:
-            return self._load_federated_data_server(data_type, data_file, batch_size)
+            return self._load_federated_data_server(data_type, data_file, batch_size, max_size)
         else:
             return self._load_federated_data_local(data_type, data_file, batch_size, partition_file)
 
     @abstractmethod
-    def _load_federated_data_server(self, data_type, data_file, batch_size):
+    def _load_federated_data_server(self, data_type, data_file, batch_size, max_size=None):
         pass
 
     @abstractmethod

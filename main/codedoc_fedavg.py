@@ -29,27 +29,28 @@ if __name__ == "__main__":
 
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaModel, RobertaTokenizer
 
+    config = config_class.from_pretrained(args.model_name)
+    tokenizer = tokenizer_class.from_pretrained(args.model_name)
+
+    encoder = model_class.from_pretrained(args.model_name, config=config)
+    decoder_layer = nn.TransformerDecoderLayer(d_model=config.hidden_size, nhead=config.num_attention_heads)
+    decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
+    model = Seq2Seq(encoder=encoder, decoder=decoder, config=config,
+                    beam_size=args.beam_size, max_length=args.max_target_length,
+                    sos_id=tokenizer.cls_token_id, eos_id=tokenizer.sep_token_id)
+
+    preprocessor = CodeDocPreprocessor(args=args, tokenizer=tokenizer)
+    manager = CodeDocDataManager(args, preprocessor)
+
     if args.do_train:
-        config = config_class.from_pretrained(args.model_name)
-        tokenizer = tokenizer_class.from_pretrained(args.model_name)
-
-        encoder = model_class.from_pretrained(args.model_name, config=config)
-        decoder_layer = nn.TransformerDecoderLayer(d_model=config.hidden_size, nhead=config.num_attention_heads)
-        decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
-        model = Seq2Seq(encoder=encoder, decoder=decoder, config=config,
-                        beam_size=args.beam_size, max_length=args.max_target_length,
-                        sos_id=tokenizer.cls_token_id, eos_id=tokenizer.sep_token_id)
         model.to(device)
-
-        # data
-        preprocessor = CodeDocPreprocessor(args=args, tokenizer=tokenizer)
-        manager = CodeDocDataManager(args, preprocessor)
 
         train_loader_list, train_data_num_list = manager.load_federated_data(False, 'train', args.train_data_file,
                                                                              args.train_batch_size,
                                                                              args.train_partition_file)
         eval_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
-        test_loader = manager.load_federated_data(True, 'test', args.eval_data_file, args.eval_batch_size)
+        test_loader = manager.load_federated_data(True, 'test', args.eval_data_file, args.eval_batch_size,
+                                                  max_size=1000)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
@@ -67,19 +68,15 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), os.path.join(save_dir, 'model.pt'))
 
     if args.do_test:
-        pass
-        # config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
-        # tokenizer = tokenizer_class.from_pretrained(args.model_type)
-        # model = model_class.from_pretrained(args.model_name, config=config)
-        # model.to(device)
-        #
-        # preprocessor = CodeSearchPreprocessor(args=args, label_vocab=None, tokenizer=tokenizer)
-        # manager = CodeSearchDataManager(args, preprocessor, args.data_type, args.data_file,
-        #                                 args.train_batch_size, args.partition_file)
-        # test_loader = manager.load_test_data()
+        model.load_state_dict(torch.load(args.load_model))
+        model.to(device)
 
-        # fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
-        # server_func = fl_algorithm(server=True)
-        # trainer = CodeSearchTrainer(args, device, model)
-        # server = server_func(None, None, test_loader, args, device, trainer)
-        # server.test()
+        test_loader = manager.load_federated_data(True, 'test', args.test_data_file, args.eval_batch_size)
+
+        fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
+        server_func = fl_algorithm(server=True)
+
+        trainer = CodeDocTrainer(args, device, model, tokenizer)
+
+        server = server_func(None, None, test_loader, args, device, trainer, None)
+        server.test()

@@ -18,7 +18,7 @@ class CodeSearchDataManager(BaseDataManager):
     def load_centralized_data(self):
         pass
 
-    def _load_federated_data_server(self, data_type, data_file, batch_size):
+    def _load_federated_data_server(self, data_type, data_file, batch_size, max_size=None):
         state, res = self._load_data_loader_from_cache(-1, data_type)
         if state:
             examples, features, dataset = res

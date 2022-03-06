@@ -178,17 +178,6 @@ class CodeDocTrainer:
         dev_bleu = round(bleu.bleuFromMaps(goldMap, predictionMap)[0], 2)
         logging.info("  %s = %s " % ("bleu-4", str(dev_bleu)))
         logging.info("  " + "*" * 20)
-        # if dev_bleu > best_bleu:
-        #     logging.info("  Best bleu:%s", dev_bleu)
-        #     logging.info("  " + "*" * 20)
-        #     best_bleu = dev_bleu
-        #     # Save best checkpoint for best bleu
-        #     output_dir = os.path.join(self.args.output_dir, 'checkpoint-best-bleu')
-        #     if not os.path.exists(output_dir):
-        #         os.makedirs(output_dir)
-        #     model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
-        #     output_model_file = os.path.join(output_dir, "pytorch_model.bin")
-        #     torch.save(model_to_save.state_dict(), output_model_file)
 
         model.cpu()
 

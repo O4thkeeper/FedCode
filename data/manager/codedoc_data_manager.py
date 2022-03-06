@@ -19,14 +19,14 @@ class CodeDocDataManager(BaseDataManager):
     def load_centralized_data(self):
         pass
 
-    def _load_federated_data_server(self, data_type, data_file, batch_size):
+    def _load_federated_data_server(self, data_type, data_file, batch_size, max_size=None):
         state, res = self._load_data_loader_from_cache(-1, data_type)
         if state:
             examples, features, dataset = res
         else:
             data = self._read_examples_from_jsonl(data_file)
-            if data_type == 'test':
-                data = random.sample(data, min(1000, len(data)))
+            if max_size:
+                data = random.sample(data, min(max_size, len(data)))
             examples, features, dataset = self.preprocessor.transform(data, data_type)
             with open(res, "wb") as handle:
                 pickle.dump((examples, features, dataset), handle)

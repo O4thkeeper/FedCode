@@ -173,6 +173,8 @@ def add_code_doc_args(parser):
 
     parser.add_argument('--model_name', type=str, default='microsoft/codebert-base')
 
+    parser.add_argument('--load_model',type=str,default='')
+
     parser.add_argument('--do_lower_case', type=bool, default=True)
 
     parser.add_argument('--train_batch_size', type=int, default=64)
