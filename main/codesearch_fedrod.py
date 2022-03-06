@@ -50,6 +50,7 @@ if __name__ == "__main__":
             for example in examples:
                 cls_num[int(example.label)] += 1
             cls_num_list.append(cls_num)
+        args.cls_num_list = [torch.Tensor(cls_num) for cls_num in cls_num_list]
         args.label_weight = [torch.Tensor(cls_num) / sum(cls_num) for cls_num in cls_num_list]
 
         eval_data_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)

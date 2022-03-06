@@ -86,7 +86,7 @@ class BSMLoss(nn.Module):
 
     def __init__(self, cls_num_list):
         super(BSMLoss, self).__init__()
-        self.sample_per_class = cls_num_list + 1
+        self.sample_per_class = cls_num_list
 
     def forward(self, input, label, reduction='mean'):
         return balanced_softmax_loss(label, input, self.sample_per_class, reduction)
