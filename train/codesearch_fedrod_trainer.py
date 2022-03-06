@@ -76,7 +76,8 @@ class CodeSearchFedrodTrainer:
             log_loss = [0.0, 0.0]
             loss_list = [[], []]
             step = 0
-            for batch in tqdm(self.train_dl, desc="training"):
+            bar = tqdm(self.train_dl, total=len(self.train_dl))
+            for batch in bar:
                 batch = tuple(t.to(self.device) for t in batch)
                 inputs = {'input_ids': batch[0],
                           'attention_mask': batch[1],
@@ -103,6 +104,9 @@ class CodeSearchFedrodTrainer:
                 phead_optimizer.step()
 
                 self.model.zero_grad()
+
+                bar.set_description(
+                    "epoch {} global_loss {} local_loss {}".format(idx, global_loss.item(), local_loss.item()))
 
                 if step % 100 == 0:
                     loss_list[0].append(global_loss.item())
