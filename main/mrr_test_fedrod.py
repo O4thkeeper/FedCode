@@ -22,7 +22,7 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, h_linear_list,
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, h_linear_state_list,
                           label_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
@@ -32,7 +32,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     batched_data = chunked(data, test_batch_size)
 
     global_ranks = []
-    local_ranks = [[] for _ in range(len(h_linear_list))]
+    local_ranks = [[] for _ in range(len(h_linear_state_list))]
 
     for batch_idx, batch_data in enumerate(batched_data):
         if len(batch_data) < test_batch_size:
@@ -54,7 +54,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        global_preds, local_preds = test(args, data_loader, test_model, h_linear_list, label_weight_list)
+        global_preds, local_preds = test(args, data_loader, test_model, h_linear_state_list, label_weight_list)
 
         batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
@@ -83,7 +83,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             f.write("client %s mrr: %s\n\n" % (i, mrr))
 
 
-def test(args, data_loader, model, h_linear_list, label_weight_list):
+def test(args, data_loader, model, h_linear_state_list, label_weight_list):
     global_preds = None
     local_preds = []
     for batch in tqdm(data_loader, desc="Testing"):
@@ -99,9 +99,8 @@ def test(args, data_loader, model, h_linear_list, label_weight_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, h_linear in enumerate(h_linear_list):
-                h_linear.to(args.device)
-                model.h_linear = h_linear
+            for i, h_linear_state in enumerate(h_linear_state_list):
+                model.load_state_dict(model.state_dict().update(h_linear_state))
                 local_logits = model.forward_local_bias(sequence_output.detach(),
                                                         label_weight_list[i].to(device)) + global_logits.detach()
                 local_logits_list.append(local_logits)
@@ -143,15 +142,12 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(os.path.join(args.model_name, 'model.pt')))
     model.to(device)
 
-    h_linear_list = [HyperClassifier(config.hidden_size, 2) for _ in range(15)]
     h_linear_state_list = torch.load(os.path.join(args.model_name, 'h_linear.pt'))
-    for i, state in enumerate(h_linear_state_list):
-        h_linear_list[i].load_state_dict(state)
     label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
 
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, h_linear_list,
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, h_linear_state_list,
                           label_weight_list)
