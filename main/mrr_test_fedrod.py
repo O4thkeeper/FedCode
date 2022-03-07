@@ -109,7 +109,7 @@ def test(args, data_loader, model, h_linear_state_list, label_weight_list):
                 local_logits = torch.matmul(sequence_output.detach()[:, 0, :], mat) + global_logits.detach()
                 local_logits_list.append(local_logits)
 
-        if not global_preds:
+        if global_preds is None:
             global_preds = global_logits.detach().cpu().numpy()
             for local_logits in local_logits_list:
                 local_preds.append(local_logits.detach().cpu().numpy())
