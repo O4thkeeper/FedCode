@@ -101,6 +101,7 @@ def test(args, data_loader, model, h_linear_list, label_weight_list):
             local_logits_list = []
             for i, h_linear in enumerate(h_linear_list):
                 h_linear.to(args.device)
+                model.h_linear = h_linear
                 local_logits = model.forward_local_bias(sequence_output.detach(),
                                                         label_weight_list[i].to(device)) + global_logits.detach()
                 local_logits_list.append(local_logits)
@@ -136,9 +137,10 @@ if __name__ == "__main__":
 
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
-    config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
+    config = config_class.from_pretrained('microsoft/codebert-base', num_labels=2, finetuning_task='codesearch')
     tokenizer = tokenizer_class.from_pretrained(args.model_type)
-    model = model_class.from_pretrained(args.model_name, config=config)
+    model = model_class.from_pretrained('microsoft/codebert-base', config=config)
+    model.load_state_dict(torch.load(os.path.join(args.model_name, 'model.pt')))
     model.to(device)
 
     h_linear_list = [HyperClassifier(config.hidden_size, 2) for _ in range(15)]
