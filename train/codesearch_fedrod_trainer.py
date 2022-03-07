@@ -61,7 +61,8 @@ class CodeSearchFedrodTrainer:
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler, ghead_optimizer, phead_optimizer = self.build_optimizer(self.model, iteration_in_total)
         local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
-        global_loss_fn = BSMLoss(self.cls_num_list[index].to(self.device)).to(self.device)
+        # global_loss_fn = BSMLoss(self.cls_num_list[index].to(self.device)).to(self.device)
+        global_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
 
         logging.info("***** Running training *****")
 
@@ -83,10 +84,12 @@ class CodeSearchFedrodTrainer:
                           'attention_mask': batch[1],
                           'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
                           'labels': batch[3]}
+
+                optimizer.zero_grad()
+                ghead_optimizer.zero_grad()
                 sequence_output = self.model(**inputs)
                 logits = self.model.forward_global(sequence_output)
-                logits_local = self.model.forward_local_bias(sequence_output.detach(),
-                                                             self.args.label_weight[index].to(self.device))
+
                 labels = batch[3]
 
                 global_loss = global_loss_fn(logits.view(-1, self.num_labels), labels.view(-1))
@@ -97,27 +100,31 @@ class CodeSearchFedrodTrainer:
                 scheduler.step()
                 ghead_optimizer.step()
 
-                local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
-                local_loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-                log_loss[1] += local_loss.item()
-                phead_optimizer.step()
+                # phead_optimizer.zero_grad()
+                # logits_local = self.model.forward_local_bias(sequence_output.detach(),
+                #                                              self.args.label_weight[index].to(
+                #                                                  self.device)) + logits.detach()
+                # local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
+                # local_loss.backward()
+                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
+                # log_loss[1] += local_loss.item()
+                # phead_optimizer.step()
 
-                self.model.zero_grad()
-
+                # bar.set_description(
+                #     "epoch {} global_loss {} local_loss {}".format(idx, global_loss.item(), local_loss.item()))
                 bar.set_description(
-                    "epoch {} global_loss {} local_loss {}".format(idx, global_loss.item(), local_loss.item()))
+                    "epoch {} global_loss {}".format(idx, global_loss.item()))
 
                 if step % 100 == 0:
                     loss_list[0].append(global_loss.item())
-                    loss_list[1].append(local_loss.item())
+                    # loss_list[1].append(local_loss.item())
 
                 step += 1
             global_step += step
-            logging.info(
-                "epoch %s train global_loss = %s local_loss = %s" % (idx, log_loss[0] / step, log_loss[1] / step))
+            # logging.info(
+            #     "epoch %s train global_loss = %s local_loss = %s" % (idx, log_loss[0] / step, log_loss[1] / step))
             logging.info("epoch %s sample global_loss = %s" % (idx, loss_list[0]))
-            logging.info("epoch %s sample local_loss = %s" % (idx, loss_list[1]))
+            # logging.info("epoch %s sample local_loss = %s" % (idx, loss_list[1]))
 
             tr_loss = [a + b for a, b in zip(log_loss, tr_loss)]
 

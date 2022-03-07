@@ -9,7 +9,6 @@ from transformers.models.roberta.modeling_roberta import RobertaClassificationHe
 
 
 class RobertaForSequenceClassification(RobertaPreTrainedModel):
-    _keys_to_ignore_on_load_missing = [r"position_ids"]
 
     def __init__(self, config):
         super().__init__(config)
@@ -18,21 +17,14 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.classifier = RobertaClassificationHead(config)
+        self.h_linear = HyperClassifier(config.hidden_size, 2)
 
         # Initialize weights and apply final processing
         self.init_weights()
 
-        self.h_linear = HyperClassifier(config.hidden_size, 2)
         # self.classifier.apply(_weights_init)
         # self.h_linear.apply(_weights_init)
 
-    # @add_start_docstrings_to_model_forward(ROBERTA_INPUTS_DOCSTRING.format("batch_size, sequence_length"))
-    # @add_code_sample_docstrings(
-    #     processor_class=_TOKENIZER_FOR_DOC,
-    #     checkpoint=_CHECKPOINT_FOR_DOC,
-    #     output_type=SequenceClassifierOutput,
-    #     config_class=_CONFIG_FOR_DOC,
-    # )
     def forward(
             self,
             input_ids=None,
