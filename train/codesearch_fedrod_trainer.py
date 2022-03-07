@@ -59,7 +59,8 @@ class CodeSearchFedrodTrainer:
 
         self.model.to(self.device)
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
-        optimizer, scheduler, ghead_optimizer, phead_optimizer = self.build_optimizer(self.model, iteration_in_total)
+        optimizer, scheduler, ghead_optimizer, g_scheduler, phead_optimizer, p_scheduler = self.build_optimizer(
+            self.model, iteration_in_total)
         local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
         # global_loss_fn = BSMLoss(self.cls_num_list[index].to(self.device)).to(self.device)
         global_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
@@ -86,7 +87,7 @@ class CodeSearchFedrodTrainer:
                           'labels': batch[3]}
 
                 optimizer.zero_grad()
-                # ghead_optimizer.zero_grad()
+                ghead_optimizer.zero_grad()
                 sequence_output = self.model(**inputs)
                 logits = self.model.forward_global(sequence_output)
 
@@ -98,7 +99,8 @@ class CodeSearchFedrodTrainer:
                 log_loss[0] += global_loss.item()
                 optimizer.step()
                 scheduler.step()
-                # ghead_optimizer.step()
+                ghead_optimizer.step()
+                g_scheduler.step()
 
                 # phead_optimizer.zero_grad()
                 # logits_local = self.model.forward_local_bias(sequence_output.detach(),
@@ -225,23 +227,28 @@ class CodeSearchFedrodTrainer:
         logging.info("local result: loss: %s; acc: %s; f1: %s" % (eval_loss, result_local['acc'], result_local['f1']))
 
     def build_optimizer(self, model, iteration_in_total):
+        warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
+        logging.info("warmup steps = %d" % warmup_steps)
         ghead_optimizer = AdamW(model.classifier.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        g_scheduler = get_linear_schedule_with_warmup(ghead_optimizer, num_warmup_steps=warmup_steps,
+                                                      num_training_steps=iteration_in_total)
         phead_optimizer = AdamW(model.h_linear.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        p_scheduler = get_linear_schedule_with_warmup(phead_optimizer, num_warmup_steps=warmup_steps,
+                                                      num_training_steps=iteration_in_total)
 
         parms = []
         for name, parm in model.state_dict().items():
             if 'h_linear' not in name and 'classifier' not in name:
                 parms.append(parm)
-        warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
-        logging.info("warmup steps = %d" % warmup_steps)
+
         self.freeze_model_parameters(model)
 
-        # optimizer = AdamW(parms, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
-        optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        optimizer = AdamW(parms, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        # optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
 
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps,
                                                     num_training_steps=iteration_in_total)
-        return optimizer, scheduler, ghead_optimizer, phead_optimizer
+        return optimizer, scheduler, ghead_optimizer, g_scheduler, phead_optimizer, p_scheduler
 
     def freeze_model_parameters(self, model):
         modules = list()
