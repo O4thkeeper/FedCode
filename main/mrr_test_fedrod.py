@@ -86,6 +86,12 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
 def test(args, data_loader, model, h_linear_state_list, label_weight_list):
     global_preds = None
     local_preds = []
+    mat_list = []
+    for i, h_linear_state in enumerate(h_linear_state_list):
+        state = model.state_dict()
+        state.update(h_linear_state)
+        model.load_state_dict(state)
+        mat_list.append(model.h_linear(label_weight_list[i]))
     for batch in tqdm(data_loader, desc="Testing"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -99,10 +105,8 @@ def test(args, data_loader, model, h_linear_state_list, label_weight_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, h_linear_state in enumerate(h_linear_state_list):
-                model.load_state_dict(model.state_dict().update(h_linear_state))
-                local_logits = model.forward_local_bias(sequence_output.detach(),
-                                                        label_weight_list[i].to(device)) + global_logits.detach()
+            for i, mat in enumerate(mat_list):
+                local_logits = torch.matmul(sequence_output.detach()[:, 0, :], mat) + global_logits.detach()
                 local_logits_list.append(local_logits)
 
         if not global_preds:
