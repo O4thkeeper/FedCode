@@ -86,7 +86,7 @@ class CodeSearchFedrodTrainer:
                           'labels': batch[3]}
 
                 optimizer.zero_grad()
-                ghead_optimizer.zero_grad()
+                # ghead_optimizer.zero_grad()
                 sequence_output = self.model(**inputs)
                 logits = self.model.forward_global(sequence_output)
 
@@ -98,7 +98,7 @@ class CodeSearchFedrodTrainer:
                 log_loss[0] += global_loss.item()
                 optimizer.step()
                 scheduler.step()
-                ghead_optimizer.step()
+                # ghead_optimizer.step()
 
                 # phead_optimizer.zero_grad()
                 # logits_local = self.model.forward_local_bias(sequence_output.detach(),
@@ -235,7 +235,10 @@ class CodeSearchFedrodTrainer:
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
         logging.info("warmup steps = %d" % warmup_steps)
         self.freeze_model_parameters(model)
-        optimizer = AdamW(parms, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+
+        # optimizer = AdamW(parms, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps,
                                                     num_training_steps=iteration_in_total)
         return optimizer, scheduler, ghead_optimizer, phead_optimizer
