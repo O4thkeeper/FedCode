@@ -72,7 +72,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
-    with open(os.path.join(args.output_dir, 'mrr_test_result.txt'), 'a') as f:
+    with open(os.path.join(args.output_dir, 'fedrod_mrr_test_result.txt'), 'a') as f:
         global_mrr = np.mean(1.0 / np.array(global_ranks))
         logging.info("global mrr: %s" % (global_mrr))
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
@@ -86,7 +86,6 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
 def test(args, data_loader, model, h_linear_list, label_weight_list):
     global_preds = None
     local_preds = []
-    # todo use array instead of list
     for batch in tqdm(data_loader, desc="Testing"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -102,7 +101,8 @@ def test(args, data_loader, model, h_linear_list, label_weight_list):
             local_logits_list = []
             for i, h_linear in enumerate(h_linear_list):
                 h_linear.to(args.device)
-                local_logits = torch.matmul(sequence_output[:, 0:], h_linear(label_weight_list[i]))
+                local_logits = model.forward_local_bias(sequence_output.detach(),
+                                                        label_weight_list[i].to(device)) + global_logits.detach()
                 local_logits_list.append(local_logits)
 
         if not global_preds:

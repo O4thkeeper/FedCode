@@ -1,7 +1,5 @@
-#py=/Users/fenghao/Documents/pythonWork/venv/bin/python
-py=python
 
-${py} -m main.mrr_test_fedrod \
+python -m main.mrr_test_fedrod \
   --data_file "data/store/codesearch/python_test_1.jsonl" \
   --data_type "mrr_test" \
   --model_type "roberta-base" \

@@ -2,7 +2,7 @@
 python -m main.codesearch_fedrod \
   --client_num_in_total 15 \
   --client_num_per_round 5 \
-  --comm_round 6 \
+  --comm_round 10 \
   --dataset "codesearch" \
   --language "python" \
   --train_data_file "data/store/codesearch/train_valid/python/train.txt" \
@@ -17,7 +17,7 @@ python -m main.codesearch_fedrod \
   --eval_batch_size 32 \
   --max_seq_length 200 \
   --learning_rate 5e-5 \
-  --epochs 3 \
+  --epochs 1 \
   --output_dir "tmp/fedrod_codesearch_output/" \
   --cache_dir "cache/codesearch/python" \
   --do_train
