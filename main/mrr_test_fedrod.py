@@ -91,7 +91,7 @@ def test(args, data_loader, model, h_linear_state_list, label_weight_list):
         state = model.state_dict()
         state.update(h_linear_state)
         model.load_state_dict(state)
-        mat_list.append(model.h_linear(label_weight_list[i]))
+        mat_list.append(model.h_linear(label_weight_list[i].to(args.device)))
     for batch in tqdm(data_loader, desc="Testing"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
