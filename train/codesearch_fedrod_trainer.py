@@ -13,7 +13,7 @@ from utils.model_utils import copy_state_dict
 
 
 class CodeSearchFedrodTrainer:
-    def __init__(self, args, device, model, train_dl=None, valid_dl=None, test_dl=None, h_linear_state_list=None):
+    def __init__(self, args, device, model, train_dl=None, valid_dl=None, test_dl=None, p_head_state_list=None):
         self.args = args
         self.device = device
 
@@ -23,7 +23,7 @@ class CodeSearchFedrodTrainer:
 
         self.model = model
         self.global_model_params = copy_state_dict(self.model.state_dict())
-        self.h_linear_state_list = h_linear_state_list
+        self.p_head_state_list = p_head_state_list
 
         self.results = {}
         self.best_accuracy = 0.0
@@ -42,8 +42,8 @@ class CodeSearchFedrodTrainer:
         return copy_state_dict(self.model.state_dict())
 
     def set_model_params(self, model_parameters, index=None):
-        if index is not None and self.h_linear_state_list is not None:
-            model_parameters.update(self.h_linear_state_list[index])
+        if index is not None and self.p_head_state_list is not None:
+            model_parameters.update(self.p_head_state_list[index])
         self.model.load_state_dict(model_parameters)
 
     def set_global_model_params(self, params):
@@ -62,7 +62,6 @@ class CodeSearchFedrodTrainer:
         optimizer, scheduler, phead_optimizer, p_scheduler = self.build_optimizer(self.model, iteration_in_total)
         local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
         global_loss_fn = BSMLoss(self.cls_num_list[index].to(self.device)).to(self.device)
-        # global_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
 
         logging.info("***** Running training *****")
 
@@ -99,9 +98,7 @@ class CodeSearchFedrodTrainer:
                 scheduler.step()
 
                 phead_optimizer.zero_grad()
-                logits_local = self.model.forward_local_bias(sequence_output.detach(),
-                                                             self.args.label_weight[index].to(
-                                                                 self.device)) + logits.detach()
+                logits_local = self.model.forward_local_bias(sequence_output.detach()) + logits.detach()
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
                 local_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
@@ -128,48 +125,12 @@ class CodeSearchFedrodTrainer:
             if args.do_eval:
                 self.eval(index)
         for name, param in self.model.state_dict().items():
-            if 'h_linear' in name:
-                self.h_linear_state_list[index][name] = param.clone().detach().cpu()
+            if 'p_head' in name:
+                self.p_head_state_list[index][name] = param.clone().detach().cpu()
 
         self.model.cpu()
 
         return global_step, [tl / global_step for tl in tr_loss]
-
-    def test(self):
-        self.model.to(self.device)
-        # for acc test
-        logging.info("***** Running Test *****")
-        preds = None
-        out_label_ids = None
-        for batch in tqdm(self.test_dl, desc="Testing"):
-            self.model.eval()
-            batch = tuple(t.to(self.device) for t in batch)
-
-            with torch.no_grad():
-                inputs = {'input_ids': batch[0],
-                          'attention_mask': batch[1],
-                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
-                          # XLM don't use segment_ids
-                          'labels': batch[3]}
-
-                outputs = self.model(**inputs)
-                _, logits = outputs[:2]
-            if preds is None:
-                preds = logits.detach().cpu().numpy()
-                out_label_ids = inputs['labels'].detach().cpu().numpy()
-            else:
-                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-        preds_label = np.argmax(preds, axis=1)
-        result = compute_metrics(preds_label, out_label_ids)
-        if not os.path.exists(self.args.output_dir):
-            os.makedirs(self.args.output_dir)
-        output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
-        with open(output_test_file, "a+") as writer:
-            logging.info("***** Test results {} *****")
-            for key in sorted(result.keys()):
-                logging.info("  %s = %s", key, str(result[key]))
-                writer.write("%s = %s\n" % (key, str(result[key])))
 
     def eval(self, index):
         self.model.to(self.device)
@@ -194,8 +155,7 @@ class CodeSearchFedrodTrainer:
 
                 sequence_output = self.model(**inputs)
                 logits_global = self.model.forward_global(sequence_output)
-                logits_local = self.model.forward_local_bias(sequence_output,
-                                                             self.args.label_weight[index].to(self.device))
+                logits_local = self.model.forward_local_bias(sequence_output.detach()) + logits_global.detach()
                 labels = batch[3]
                 global_loss = global_loss_fn(logits_global.view(-1, self.num_labels), labels.view(-1))
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
@@ -224,7 +184,7 @@ class CodeSearchFedrodTrainer:
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
         logging.info("warmup steps = %d" % warmup_steps)
-        phead_optimizer = AdamW(model.h_linear.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
+        phead_optimizer = AdamW(model.p_head.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
         p_scheduler = get_linear_schedule_with_warmup(phead_optimizer, num_warmup_steps=warmup_steps,
                                                       num_training_steps=iteration_in_total)
 

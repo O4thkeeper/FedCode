@@ -2,18 +2,20 @@ import argparse
 import logging
 import os.path
 import time
+from collections import OrderedDict
 
 import numpy as np
 import torch
 from more_itertools import chunked
 from tqdm import tqdm
 from transformers import RobertaConfig, RobertaTokenizer
+from transformers.models.roberta.modeling_roberta import RobertaClassificationHead
 
 from data.manager.codesearch_data_manager import Example, CodeSearchDataManager
 from data.preprocess.base.base_data_loader import BaseDataLoader
 from data.preprocess.codesearch_preprocessor import CodeSearchPreprocessor
 from main.initialize import add_mrr_test_args, set_seed
-from model.roberta_model import RobertaForSequenceClassification, HyperClassifier
+from model.roberta_model import RobertaForSequenceClassification
 
 
 def format_str(string):
@@ -22,8 +24,7 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, h_linear_state_list,
-                          label_weight_list):
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
 
@@ -32,7 +33,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     batched_data = chunked(data, test_batch_size)
 
     global_ranks = []
-    local_ranks = [[] for _ in range(len(h_linear_state_list))]
+    local_ranks = [[] for _ in range(len(p_head_list))]
 
     for batch_idx, batch_data in enumerate(batched_data):
         if len(batch_data) < test_batch_size:
@@ -54,7 +55,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        global_preds, local_preds = test(args, data_loader, test_model, h_linear_state_list, label_weight_list)
+        global_preds, local_preds = test(args, data_loader, test_model, p_head_list)
 
         batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
@@ -77,21 +78,21 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         logging.info("global mrr: %s" % (global_mrr))
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
         f.write("global mrr: %s\n\n" % (global_mrr))
+        mrr_list = []
         for i, ranks in enumerate(local_ranks):
             mrr = np.mean(1.0 / np.array(ranks))
+            mrr_list.append(mrr)
             logging.info("client %s mrr: %s" % (i, mrr))
             f.write("client %s mrr: %s\n\n" % (i, mrr))
+        logging.info("avg mrr: %s" % (np.mean(mrr_list)))
+        f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
+        logging.info("max mrr: %s" % (np.max(mrr_list)))
+        f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
 
 
-def test(args, data_loader, model, h_linear_state_list, label_weight_list):
+def test(args, data_loader, model, p_head_list):
     global_preds = None
     local_preds = []
-    mat_list = []
-    for i, h_linear_state in enumerate(h_linear_state_list):
-        state = model.state_dict()
-        state.update(h_linear_state)
-        model.load_state_dict(state)
-        mat_list.append(model.h_linear(label_weight_list[i].to(args.device)))
     for batch in tqdm(data_loader, desc="Testing"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -105,8 +106,8 @@ def test(args, data_loader, model, h_linear_state_list, label_weight_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, mat in enumerate(mat_list):
-                local_logits = torch.matmul(sequence_output.detach()[:, 0, :], mat) + global_logits.detach()
+            for i, p_head in enumerate(p_head_list):
+                local_logits = p_head(sequence_output) + global_logits.detach()
                 local_logits_list.append(local_logits)
 
         if global_preds is None:
@@ -146,12 +147,17 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(os.path.join(args.model_name, 'model.pt')))
     model.to(device)
 
-    h_linear_state_list = torch.load(os.path.join(args.model_name, 'h_linear.pt'))
-    label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
+    p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
+    # label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
+    p_head_list = [RobertaClassificationHead(config) for _ in range(len(p_head_state_list))]
+    for i, p_head_state in enumerate(p_head_state_list):
+        state = OrderedDict()
+        for key, value in p_head_state.items():
+            state['.'.join(key.split('.')[1:])] = value
+        p_head_list[i].load_state_dict(state)
 
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, h_linear_state_list,
-                          label_weight_list)
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list)

@@ -58,12 +58,12 @@ if __name__ == "__main__":
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
         client_func = fl_algorithm(server=False)
-        h_linear_state_list = [{} for _ in range(args.client_num_in_total)]
+        p_head_state_list = [{} for _ in range(args.client_num_in_total)]
         for name, param in model.state_dict().items():
-            if 'h_linear' in name:
+            if 'p_head' in name:
                 for i in range(args.client_num_in_total):
-                    h_linear_state_list[i][name] = param.clone().detach().cpu()
-        trainer = CodeSearchFedrodTrainer(args, device, model, h_linear_state_list=h_linear_state_list)
+                    p_head_state_list[i][name] = param.clone().detach().cpu()
+        trainer = CodeSearchFedrodTrainer(args, device, model, p_head_state_list=p_head_state_list)
 
         clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
         server = server_func(clients, None, eval_data_loader, None, args, device, trainer)
@@ -73,5 +73,5 @@ if __name__ == "__main__":
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         torch.save(model.state_dict(), os.path.join(save_dir, "model.pt"))
-        torch.save(trainer.h_linear_state_list, os.path.join(save_dir, "h_linear.pt"))
+        torch.save(trainer.p_head_state_list, os.path.join(save_dir, "p_head.pt"))
         torch.save(args.label_weight, os.path.join(save_dir, "label_weight.pt"))

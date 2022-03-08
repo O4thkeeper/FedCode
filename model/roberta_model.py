@@ -17,7 +17,8 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.classifier = RobertaClassificationHead(config)
-        self.h_linear = HyperClassifier(config.hidden_size, 2)
+        # self.h_linear = HyperClassifier(config.hidden_size, 2)
+        self.p_head = RobertaClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.init_weights()
@@ -61,11 +62,14 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         return sequence_output
 
-    def forward_local_bias(self, feat, label_weight):
-        cls_feat = feat[:, 0, :]
-        clf_w = self.h_linear(label_weight)
-        x = torch.matmul(cls_feat, clf_w)
-        return x
+    # def forward_local_bias(self, feat, label_weight):
+    #     cls_feat = feat[:, 0, :]
+    #     clf_w = self.h_linear(label_weight)
+    #     x = torch.matmul(cls_feat, clf_w)
+    #     return x
+
+    def forward_local_bias(self, feat):
+        return self.p_head(feat)
 
     def forward_global(self, feat):
         return self.classifier(feat)
