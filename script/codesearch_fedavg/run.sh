@@ -67,3 +67,26 @@ python -m main.codesearch_fedavg \
    --output_dir "tmp/fedavg_codesearch_output/" \
    --cache_dir "cache/codesearch/go" \
    --do_train
+
+
+python -m main.codesearch_fedavg \
+   --client_num_in_total 64 \
+   --client_num_per_round 8 \
+   --comm_round 12 \
+   --dataset "codesearch" \
+   --language "javascript" \
+   --train_data_file "data/store/codesearch/train_valid/javascript/train.txt" \
+   --train_partition_file "data/store/codesearch/train_valid/javascript/train_partition_64.pk" \
+   --partition_method niid_quantity_clients=64_beta=1.0 \
+   --fl_algorithm FedAvg \
+   --model_type 'roberta-base' \
+   --model_name 'microsoft/codebert-base' \
+   --do_lower_case True \
+   --train_batch_size 64 \
+   --eval_batch_size 32 \
+   --max_seq_length 200 \
+   --learning_rate 1e-5 \
+   --epochs 1 \
+   --output_dir "tmp/fedavg_codesearch_output/" \
+   --cache_dir "cache/codesearch/javascript_64" \
+   --do_train

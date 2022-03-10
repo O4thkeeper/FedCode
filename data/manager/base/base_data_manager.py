@@ -32,7 +32,7 @@ class BaseDataManager(ABC):
         if not os.path.exists(args.cache_dir):
             os.makedirs(args.cache_dir)
         cached_features_file = os.path.join(args.cache_dir,
-                                            args.model_type + "_" + args.model_name.split("/")[-1] + "_cached_"
+                                            args.model_type.split("/")[-1] + "_" + args.model_name.split("/")[-1] + "_cached_"
                                             + str(args.max_seq_length) + "_" + args.dataset + "_"
                                             + args.partition_method + "_" + str(client_id) + "_" + data_type)
 
