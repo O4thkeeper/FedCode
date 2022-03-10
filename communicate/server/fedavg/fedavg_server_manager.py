@@ -1,3 +1,4 @@
+import gc
 import logging
 import os.path
 
@@ -19,6 +20,9 @@ class FedAVGServerManager():
             current_model = self.aggregator.get_global_model_params()
             model_params_list, sample_num_list = self.clients.train(client_indexes, current_model)
             self.aggregator.aggregate(model_params_list, sample_num_list)
+
+            del model_params_list
+            gc.collect()
 
             if self.args.do_eval:
                 self.aggregator.eval_global_model()

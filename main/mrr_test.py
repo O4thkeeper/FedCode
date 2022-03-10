@@ -114,7 +114,7 @@ if __name__ == "__main__":
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
     config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
-    tokenizer = tokenizer_class.from_pretrained(args.model_type)
+    tokenizer = tokenizer_class.from_pretrained(args.model_name)
     model = model_class.from_pretrained(args.model_name, config=config)
     model.to(device)
 
