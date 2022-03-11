@@ -1,4 +1,5 @@
 import argparse
+import gc
 import logging
 import os.path
 import time
@@ -61,6 +62,9 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             scores = np.array([data[-1] for data in batch_data])
             rank = np.sum(scores >= correct_score)
             ranks.append(rank)
+
+        del data_loader, examples, features, dataset, batched_logits, all_logits
+        gc.collect()
 
     mean_mrr = np.mean(1.0 / np.array(ranks))
     logging.info("mrr: %s" % (mean_mrr))

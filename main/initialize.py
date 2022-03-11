@@ -2,25 +2,10 @@ import random
 
 import numpy as np
 import torch
-from transformers import (
-    BertConfig,
-    BertTokenizer,
-    BertForTokenClassification,
-    BertForQuestionAnswering,
-    DistilBertConfig,
-    DistilBertTokenizer,
-    DistilBertForTokenClassification,
-    DistilBertForQuestionAnswering,
-    BartConfig,
-    BartForConditionalGeneration,
-    BartTokenizer,
-)
 
 from communicate.server.fedavg.fedavg_api import fedAvg_distributed
 from communicate.server.feddf.feddf_api import feddf_distributed
 from communicate.server.fedrod.fedrod_api import fedrod_distributed
-from model.bert_model import BertForSequenceClassification
-from model.distilbert_model import DistilBertForSequenceClassification
 
 
 def get_fl_algorithm_initializer(alg_name):

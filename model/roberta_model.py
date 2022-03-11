@@ -1,8 +1,5 @@
-import logging
-
 import torch
 import torch.nn.functional as F
-import torch.nn.init as init
 
 from torch import nn
 from transformers.models.roberta.modeling_roberta import RobertaClassificationHead, RobertaPreTrainedModel, RobertaModel
@@ -23,8 +20,6 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         # Initialize weights and apply final processing
         self.init_weights()
 
-        # self.classifier.apply(_weights_init)
-        # self.h_linear.apply(_weights_init)
 
     def forward(
             self,
@@ -128,8 +123,3 @@ class HyperClassifier(nn.Module):
 
         return h_final
 
-
-def _weights_init(m):
-    classname = m.__class__.__name__
-    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
-        init.kaiming_normal_(m.weight)

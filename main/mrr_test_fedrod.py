@@ -1,4 +1,5 @@
 import argparse
+import gc
 import logging
 import os.path
 import time
@@ -70,6 +71,9 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                 scores = np.array([data[-1] for data in batch_data])
                 rank = np.sum(scores >= correct_score)
                 local_ranks[i].append(rank)
+
+        del batched_logits, global_preds, local_preds, data_loader, examples, features, dataset
+        gc.collect()
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir, exist_ok=True)
@@ -160,4 +164,4 @@ if __name__ == "__main__":
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list)
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list[:16])
