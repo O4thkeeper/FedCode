@@ -111,8 +111,10 @@ def test(args, data_loader, model, p_head_list):
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
             for i, p_head in enumerate(p_head_list):
+                p_head.to(args.device)
                 local_logits = p_head(sequence_output) + global_logits.detach()
                 local_logits_list.append(local_logits)
+                p_head.cpu()
 
         if global_preds is None:
             global_preds = global_logits.detach().cpu().numpy()
