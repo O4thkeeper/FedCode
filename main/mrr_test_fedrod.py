@@ -16,7 +16,7 @@ from data.manager.codesearch_data_manager import Example, CodeSearchDataManager
 from data.preprocess.base.base_data_loader import BaseDataLoader
 from data.preprocess.codesearch_preprocessor import CodeSearchPreprocessor
 from main.initialize import add_mrr_test_args, set_seed
-from model.roberta_model import RobertaForSequenceClassification
+from model.roberta_model import RobertaForSequenceClassification, HyperClassifier
 
 
 def format_str(string):
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
     # label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    p_head_list = [RobertaClassificationHead(config) for _ in range(len(p_head_state_list))]
+    p_head_list = [HyperClassifier(config.hidden_size, 2) for _ in range(len(p_head_state_list))]
     for i, p_head_state in enumerate(p_head_state_list):
         state = OrderedDict()
         for key, value in p_head_state.items():

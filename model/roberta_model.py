@@ -14,12 +14,11 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.classifier = RobertaClassificationHead(config)
-        # self.h_linear = HyperClassifier(config.hidden_size, 2)
-        self.p_head = RobertaClassificationHead(config)
+        self.p_head = HyperClassifier(config.hidden_size, 2)
+        # self.p_head = RobertaClassificationHead(config)
 
         # Initialize weights and apply final processing
         self.init_weights()
-
 
     def forward(
             self,
@@ -107,19 +106,21 @@ class HyperClassifier(nn.Module):
         super(HyperClassifier, self).__init__()
         self.f_size = f_size
         self.label_count = label_count
-        # self.fc1 = nn.Linear(f_size, f_size)
-        # self.fc2 = nn.Linear(f_size, f_size * label_count)
-        self.fc1 = nn.Linear(self.label_count, self.f_size)
-        self.fc2 = nn.Linear(self.f_size, self.label_count * self.f_size)
+        self.fc1 = nn.Linear(f_size, f_size)
+        self.fc2 = nn.Linear(f_size, f_size * label_count)
+        # self.fc1 = nn.Linear(self.label_count, self.f_size)
+        # self.fc2 = nn.Linear(self.f_size, self.label_count * self.f_size)
 
     def forward(self, x):
         # h_in = F.relu(self.fc1(feat))
         # h_final = self.fc2(h_in)
         # h_final = h_final[0, :].view(-1, self.label_count)
 
+        x = x[:, 0, :]
         h_in = F.relu(self.fc1(x))
         h_final = self.fc2(h_in)
         h_final = h_final.view(-1, self.label_count)
+        h_final = torch.matmul(x, h_final)
 
         return h_final
 
