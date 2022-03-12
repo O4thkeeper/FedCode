@@ -119,8 +119,11 @@ class HyperClassifier(nn.Module):
         x = x[:, 0, :]
         h_in = F.relu(self.fc1(x))
         h_final = self.fc2(h_in)
-        h_final = h_final.view(-1, self.label_count)
-        h_final = torch.matmul(x, h_final)
 
-        return h_final
+        result = []
+        for i in range(x.shape[0]):
+            result.append(torch.matmul(x[i], h_final[i].view(-1, self.label_count)))
+        # h_final = h_final[0, :].view(-1, self.label_count)
+        # h_final = torch.matmul(x, h_final)
 
+        return torch.stack(result)
