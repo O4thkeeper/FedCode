@@ -50,7 +50,7 @@ if __name__ == "__main__":
     sampler = RandomSampler(dataset)
     data_loader = BaseDataLoader(examples, features, dataset,
                                  sampler=sampler,
-                                 batch_size=64)
+                                 batch_size=32)
     test_loader = manager.load_federated_data(True, 'test', args.eval_data_file, args.eval_batch_size,
                                               max_size=1000)
 
