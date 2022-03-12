@@ -59,10 +59,10 @@ if __name__ == "__main__":
             break
         batch = tuple(t.to(device) for t in batch)
         source_ids, source_mask, target_ids, target_mask = batch
-        logging.info("source_ids shape %s" % source_ids.shape)
-        logging.info("source_mask shape %s" % source_mask.shape)
-        logging.info("target_ids shape %s" % target_ids.shape)
-        logging.info("target_mask shape %s" % target_mask.shape)
+        logging.info("source_ids %s" % source_ids)
+        logging.info("source_mask %s" % source_mask)
+        logging.info("target_ids %s" % target_ids)
+        logging.info("target_mask %s" % target_mask)
 
         outputs = model.encoder(source_ids, attention_mask=source_mask)
         logging.info("outputs shape %s" % outputs.shape)
