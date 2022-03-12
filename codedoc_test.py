@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     model.to(device)
 
-    state, res = manager._load_data_loader_from_cache(1,'train')
+    state, res = manager._load_data_loader_from_cache(1, 'train')
     examples, features, dataset = res
     sampler = RandomSampler(dataset)
     data_loader = BaseDataLoader(examples, features, dataset,
@@ -59,42 +59,42 @@ if __name__ == "__main__":
             break
         batch = tuple(t.to(device) for t in batch)
         source_ids, source_mask, target_ids, target_mask = batch
-        logging.info("source_ids %s" % source_ids)
-        logging.info("source_mask %s" % source_mask)
-        logging.info("target_ids %s" % target_ids)
-        logging.info("target_mask %s" % target_mask)
+        logging.info("source_ids ", source_ids.shape)
+        logging.info("source_mask ", source_mask.shape)
+        logging.info("target_ids ", target_ids.shape)
+        logging.info("target_mask ", target_mask.shape)
 
         outputs = model.encoder(source_ids, attention_mask=source_mask)
-        logging.info("outputs shape %s" % outputs.shape)
+        logging.info("outputs shape ", outputs[0].shape)
 
         encoder_output = outputs[0].permute([1, 0, 2]).contiguous()
-        logging.info("encoder_output shape %s" % encoder_output.shape)
+        logging.info("encoder_output ", encoder_output.shape)
 
         attn_mask = -1e4 * (1 - model.bias[:target_ids.shape[1], :target_ids.shape[1]])
-        logging.info("attn_mask shape %s" % attn_mask.shape)
+        logging.info("attn_mask shape", attn_mask.shape)
 
         tgt_embeddings = model.encoder.embeddings(target_ids).permute([1, 0, 2]).contiguous()
-        logging.info("tgt_embeddings shape %s" % tgt_embeddings.shape)
+        logging.info("tgt_embeddings shape ", tgt_embeddings.shape)
 
         out = model.decoder(tgt_embeddings, encoder_output, tgt_mask=attn_mask,
                             memory_key_padding_mask=(1 - source_mask).bool())
-        logging.info("out shape %s" % out.shape)
+        logging.info("out shape", out.shape)
 
         hidden_states = torch.tanh(model.dense(out)).permute([1, 0, 2]).contiguous()
-        logging.info("hidden_states shape %s" % hidden_states.shape)
+        logging.info("hidden_states shape ", hidden_states.shape)
 
         lm_logits = model.lm_head(hidden_states)
-        logging.info("lm_logits shape %s" % lm_logits.shape)
+        logging.info("lm_logits shape ", lm_logits.shape)
 
         # Shift so that tokens < n predict n
         active_loss = target_mask[..., 1:].ne(0).view(-1) == 1
-        logging.info("active_loss shape %s" % active_loss.shape)
+        logging.info("active_loss shape ", active_loss.shape)
 
         shift_logits = lm_logits[..., :-1, :].contiguous()
-        logging.info("shift_logits shape %s" % shift_logits.shape)
+        logging.info("shift_logits shape ", shift_logits.shape)
 
         shift_labels = target_ids[..., 1:].contiguous()
-        logging.info("shift_labels shape %s" % shift_labels.shape)
+        logging.info("shift_labels shape ", shift_labels.shape)
 
         # Flatten the tokens
         loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
