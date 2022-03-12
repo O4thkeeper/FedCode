@@ -19,6 +19,7 @@ class CodeSearchFedrodTrainer:
 
         self.num_labels = args.num_labels
         self.cls_num_list = args.cls_num_list
+        self.label_weight = args.label_weight
         self.set_data(train_dl, valid_dl, test_dl)
 
         self.model = model
@@ -98,7 +99,8 @@ class CodeSearchFedrodTrainer:
                 scheduler.step()
 
                 phead_optimizer.zero_grad()
-                logits_local = self.model.forward_local_bias(sequence_output.detach()) + logits.detach()
+                logits_local = self.model.forward_local_bias(self.label_weight[index].to(self.device),
+                                                             sequence_output.detach()) + logits.detach()
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
                 local_loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
@@ -155,7 +157,8 @@ class CodeSearchFedrodTrainer:
 
                 sequence_output = self.model(**inputs)
                 logits_global = self.model.forward_global(sequence_output)
-                logits_local = self.model.forward_local_bias(sequence_output.detach()) + logits_global.detach()
+                logits_local = self.model.forward_local_bias(self.label_weight[index].to(self.device),
+                                                             sequence_output.detach()) + logits.detach()
                 labels = batch[3]
                 global_loss = global_loss_fn(logits_global.view(-1, self.num_labels), labels.view(-1))
                 local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
