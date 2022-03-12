@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from more_itertools import chunked
 from tqdm import tqdm
 from transformers import RobertaConfig, RobertaTokenizer
@@ -25,7 +26,7 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list):
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, mat_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
 
@@ -34,7 +35,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     batched_data = chunked(data, test_batch_size)
 
     global_ranks = []
-    local_ranks = [[] for _ in range(len(p_head_list))]
+    local_ranks = [[] for _ in range(len(mat_list))]
 
     for batch_idx, batch_data in enumerate(batched_data):
         if len(batch_data) < test_batch_size:
@@ -56,7 +57,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        global_preds, local_preds = test(args, data_loader, test_model, p_head_list)
+        global_preds, local_preds = test(args, data_loader, test_model, mat_list)
 
         batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
@@ -94,7 +95,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
 
 
-def test(args, data_loader, model, p_head_list):
+def test(args, data_loader, model, mat_list):
     global_preds = None
     local_preds = []
     for batch in tqdm(data_loader, desc="Testing"):
@@ -110,11 +111,9 @@ def test(args, data_loader, model, p_head_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, p_head in enumerate(p_head_list):
-                p_head.to(args.device)
-                local_logits = p_head(sequence_output) + global_logits.detach()
+            for i, mat in enumerate(mat_list):
+                local_logits = torch.matmul(sequence_output.detach()[:, 0, :], mat) + global_logits.detach()
                 local_logits_list.append(local_logits)
-                p_head.cpu()
 
         if global_preds is None:
             global_preds = global_logits.detach().cpu().numpy()
@@ -154,16 +153,22 @@ if __name__ == "__main__":
     model.to(device)
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
-    # label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    p_head_list = [HyperClassifier(config.hidden_size, 2) for _ in range(len(p_head_state_list))]
+    label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
+    p_head = HyperClassifier(config.hidden_size, 2)
+    mat_list = []
     for i, p_head_state in enumerate(p_head_state_list):
         state = OrderedDict()
         for key, value in p_head_state.items():
             state['.'.join(key.split('.')[1:])] = value
-        p_head_list[i].load_state_dict(state)
+        p_head.load_state_dict(state)
+        p_head.to(args.device)
+        h_in = F.relu(p_head.fc1(label_weight_list[i].to(args.device)))
+        h_final = p_head.fc2(h_in)
+        mat_list.append(h_final.view(-1, p_head.label_count))
+        p_head.cpu()
 
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list[:16])
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, mat_list)
