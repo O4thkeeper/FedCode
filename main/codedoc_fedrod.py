@@ -70,9 +70,10 @@ if __name__ == "__main__":
         vocab_weight_list = [[0 for _ in range(config.vocab_size)] for _ in range(args.client_num_in_total)]
         for loader, counter, vocab_weight in tqdm(zip(train_loader_list, counter_list, vocab_weight_list),
                                                   desc="counting vocab"):
-            for data in loader:
-                for i in range(data.shape[0]):
-                    counter.update(data[i].tolist())
+            for batch in loader:
+                source_ids, _, target_ids, _ = batch
+                for i in range(source_ids.shape[0]):
+                    counter.update(source_ids[i].tolist())
             for key, value in counter.items():
                 vocab_weight[int(key)] = value
         vocab_weight_list = torch.Tensor(vocab_weight_list)
