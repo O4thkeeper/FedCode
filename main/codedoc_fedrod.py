@@ -1,8 +1,10 @@
 import argparse
 import logging
 import os.path
+import time
 from collections import Counter
 
+import numpy as np
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -90,16 +92,27 @@ if __name__ == "__main__":
         torch.save(vocab_weight_list, os.path.join(save_dir, 'vocab.pt'))
 
     if args.do_test:
-        pass
-        # model.load_state_dict(torch.load(args.load_model))
-        # model.to(device)
-        #
-        # test_loader = manager.load_federated_data(True, 'test', args.test_data_file, args.eval_batch_size)
-        #
-        # fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
-        # server_func = fl_algorithm(server=True)
-        #
-        # trainer = CodeDocTrainer(args, device, model, tokenizer)
-        #
-        # server = server_func(None, None, test_loader, args, device, trainer, None)
-        # server.test()
+        model.load_state_dict(torch.load(os.path.join(args.load_model, 'model.pt')))
+        model.to(device)
+
+        test_loader = manager.load_federated_data(True, 'test', args.test_data_file, args.eval_batch_size)
+
+        p_head_state_list = torch.load(os.path.join(args.load_model, 'p_head.pt'))
+        vocab_weight_list = torch.load(os.path.join(args.load_model, 'vocab.pt'))
+
+        trainer = CodeDocFedRodTrainer(args, device, model, tokenizer, test_dl=test_loader,
+                                       p_head_state_list=p_head_state_list, vocab_weight_list=vocab_weight_list)
+        g_bleu = trainer.test()
+        with open(os.path.join(args.output_dir, 'fedrod_bleu_test_result.txt'), 'a') as f:
+            f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
+            f.write("global bleu-4: %s\n\n" % g_bleu)
+            bleu_list = []
+            for i in range(len(p_head_state_list)):
+                if i > 8:
+                    break
+                l_bleu = trainer.test(i)
+                bleu_list.append(l_bleu)
+                f.write("client %s bleu-4: %s\n\n" % (i, l_bleu))
+            f.write("avg bleu-4: %s\n\n" % np.mean(bleu_list))
+            f.write("max bleu-4: %s\n\n" % np.max(bleu_list))
+            f.write("min bleu-4: %s\n\n" % np.min(bleu_list))

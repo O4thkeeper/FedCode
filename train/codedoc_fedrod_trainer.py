@@ -107,19 +107,22 @@ class CodeDocFedRodTrainer:
 
         return global_step, tr_loss / global_step
 
-    def test(self,):
-        # todo
+    def test(self, index=None):
         model = self.model
         tokenizer = self.tokenizer
         model.to(self.device)
         model.eval()
         p = []
-        # todo save encoder output and do predict for every client
         for batch in tqdm(self.test_dl, total=len(self.test_dl)):
             batch = tuple(t.to(self.device) for t in batch)
             source_ids, source_mask = batch
             with torch.no_grad():
-                preds = model(source_ids=source_ids, source_mask=source_mask)
+                encoder_output = model(source_ids=source_ids, source_mask=source_mask, return_encode=True)
+                if not index:
+                    preds = model.predict(encoder_output, source_ids, source_mask)
+                else:
+                    preds = model.predict(encoder_output, source_ids, source_mask,
+                                          self.vocab_weight_list[index].to(self.device))
                 for pred in preds:
                     t = pred[0].cpu().numpy()
                     t = list(t)
@@ -139,9 +142,13 @@ class CodeDocFedRodTrainer:
         (goldMap, predictionMap) = bleu.computeMaps(predictions,
                                                     os.path.join(self.args.output_dir, "test.gold"))
         dev_bleu = round(bleu.bleuFromMaps(goldMap, predictionMap)[0], 2)
-        logging.info("  %s = %s " % ("bleu-4", str(dev_bleu)))
+        if not index:
+            logging.info("global %s = %s " % ("bleu-4", str(dev_bleu)))
+        else:
+            logging.info("client %s %s = %s " % (index, "bleu-4", str(dev_bleu)))
 
         model.cpu()
+        return dev_bleu
 
     def eval(self):
         model = self.model

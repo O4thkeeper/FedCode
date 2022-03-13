@@ -34,7 +34,7 @@ class Seq2Seq(nn.Module):
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
         if p_head:
-            self.p_head = HyperClassifier(config.hidden_size, config.vocab_size)
+            self.p_head = HyperClassifier(config.hidden_size, config.vocab_size, 16)
         self.lsm = nn.LogSoftmax(dim=-1)
         self.tie_weights()
 
@@ -81,16 +81,16 @@ class Seq2Seq(nn.Module):
                                    shift_labels.view(-1)[active_loss])
             outputs = global_loss, global_loss * active_loss.sum(), active_loss.sum()
             if train_p_head:
-                p_logits = self.p_head(vocab_weight, hidden_states.detach()) + lm_logits.detach()
+                p_logits = self.p_head(hidden_states.detach(), vocab_weight.detach()) + lm_logits.detach()
                 p_shift_logits = p_logits[..., :-1, :].contiguous()
                 local_loss = loss_fct(p_shift_logits.view(-1, p_shift_logits.size(-1))[active_loss],
                                       shift_labels.view(-1)[active_loss])
                 outputs += (local_loss,)
             return outputs
         else:
-            return self.predict(encoder_output, source_ids, source_mask, g_predict=True)
+            return self.predict(encoder_output, source_ids, source_mask)
 
-    def predict(self, encoder_output, source_ids, source_mask, g_predict, vocab_weight=None):
+    def predict(self, encoder_output, source_ids, source_mask, vocab_weight=None):
         preds = []
         zero = torch.cuda.LongTensor(1).fill_(0)
         for i in range(source_ids.shape[0]):
@@ -110,7 +110,7 @@ class Seq2Seq(nn.Module):
                 out = torch.tanh(self.dense(out))
                 hidden_states = out.permute([1, 0, 2]).contiguous()[:, -1, :]
                 lm_logits = self.lm_head(hidden_states)
-                if g_predict:
+                if not vocab_weight:
                     out = self.lsm(lm_logits).data
                 else:
                     out = self.lsm(self.p_head(vocab_weight, hidden_states) + lm_logits).data
@@ -242,17 +242,19 @@ class Beam(object):
 
 class HyperClassifier(nn.Module):
 
-    def __init__(self, f_size, label_count):
+    def __init__(self, f_size, l_size, c_size):
         super(HyperClassifier, self).__init__()
         self.f_size = f_size
-        self.label_count = label_count
-        self.fc1 = nn.Linear(self.label_count, self.f_size)
-        self.fc2 = nn.Linear(self.f_size, self.label_count * self.f_size)
+        self.l_size = l_size
+        self.c_size = c_size
+        self.fc1 = nn.Linear(f_size, c_size)
+        self.fc2 = nn.Linear(l_size, c_size)
+        self.fc3 = nn.Linear(c_size, c_size * l_size)
 
-    def forward(self, x, feat):
-        h_in = F.relu(self.fc1(x))
-        h_final = self.fc2(h_in)
+    def forward(self, feat, label):
+        h_feat = F.relu(self.fc1(feat))
+        h_label = self.fc3(F.relu(self.fc2(label)))
 
-        h_final = torch.matmul(feat, h_final.view(-1, self.label_count))
+        h_final = torch.matmul(h_feat, h_label.view(-1, self.l_size))
 
         return h_final
