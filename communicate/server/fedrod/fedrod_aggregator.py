@@ -17,12 +17,12 @@ class FedRodAggregator(BaseAggregator):
         averaged_params = model_params_list[0]
 
         # delete keys that not be aggregated in fedrod
-        del_key = []
-        for k in averaged_params.keys():
-            if 'p_head' in k:
-                del_key.append(k)
-        for k in del_key:
-            del averaged_params[k]
+        # del_key = []
+        # for k in averaged_params.keys():
+        #     if 'p_head' in k:
+        #         del_key.append(k)
+        # for k in del_key:
+        #     del averaged_params[k]
 
         for i in range(0, len(model_params_list)):
             local_sample_number = sample_num_list[i]
@@ -38,7 +38,7 @@ class FedRodAggregator(BaseAggregator):
                     averaged_params[k] += local_model_params[k] * w
 
         self.set_global_model_params(averaged_params)
-        self.trainer.set_model_params(averaged_params, 0)
+        self.trainer.set_model_params(averaged_params)
 
     def test_on_server(self):
         self.trainer.test()

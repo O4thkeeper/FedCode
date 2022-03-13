@@ -37,6 +37,8 @@ class CodeDocFedRodTrainer:
         return copy_state_dict(self.model.state_dict())
 
     def set_model_params(self, model_parameters, index=None):
+        if index is not None and self.p_head_state_list is not None:
+            model_parameters.update(self.p_head_state_list[index])
         self.model.load_state_dict(model_parameters)
 
     def set_global_model_params(self, params):
