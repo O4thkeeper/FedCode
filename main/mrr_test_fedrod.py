@@ -93,6 +93,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
         logging.info("max mrr: %s" % (np.max(mrr_list)))
         f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
+        logging.info("min mrr: %s" % (np.min(mrr_list)))
+        f.write("min mrr: %s\n\n" % (np.min(mrr_list)))
 
 
 def test(args, data_loader, model, mat_list):
