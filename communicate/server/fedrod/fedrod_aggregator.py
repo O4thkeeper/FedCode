@@ -19,7 +19,7 @@ class FedRodAggregator(BaseAggregator):
         # delete keys that not be aggregated in fedrod
         del_key = []
         for k in averaged_params.keys():
-            if 'h_linear' in k:
+            if 'p_head' in k:
                 del_key.append(k)
         for k in del_key:
             del averaged_params[k]
@@ -42,3 +42,6 @@ class FedRodAggregator(BaseAggregator):
 
     def test_on_server(self):
         self.trainer.test()
+
+    def eval_global_model(self):
+        self.trainer.eval()

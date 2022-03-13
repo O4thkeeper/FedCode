@@ -39,8 +39,8 @@ python -m main.codesearch_fedrod \
   --train_batch_size 64 \
   --eval_batch_size 32 \
   --max_seq_length 200 \
-  --learning_rate 1e-5 \
-  --epochs 1 \
+  --learning_rate 5e-5 \
+  --epochs 2 \
   --output_dir "tmp/fedrod_codesearch_output/" \
   --cache_dir "cache/codesearch/javascript_64" \
   --do_train
