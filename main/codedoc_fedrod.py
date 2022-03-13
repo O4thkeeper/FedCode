@@ -74,6 +74,7 @@ if __name__ == "__main__":
                 source_ids, _, target_ids, _ = batch
                 for i in range(source_ids.shape[0]):
                     counter.update(source_ids[i].tolist())
+                    counter.update(target_ids[i].tolist())
             for key, value in counter.items():
                 vocab_weight[int(key)] = value
         vocab_weight_list = torch.Tensor(vocab_weight_list)
@@ -82,8 +83,8 @@ if __name__ == "__main__":
         trainer = CodeDocFedRodTrainer(args, device, model, tokenizer, p_head_state_list=p_head_state_list,
                                        vocab_weight_list=vocab_weight_list)
 
-        clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer, None)
-        server = server_func(clients, None, test_loader, args, device, trainer, eval_loader)
+        clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
+        server = server_func(clients, None, eval_loader, test_loader, args, device, trainer)
         server.run()
 
         save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
