@@ -109,13 +109,16 @@ if __name__ == "__main__":
         with open(os.path.join(args.output_dir, 'fedrod_bleu_test_result.txt'), 'a') as f:
             f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
             f.write("global bleu-4: %s\n\n" % g_bleu)
-            bleu_list = []
-            for i in range(len(p_head_state_list)):
-                if i > 8:
-                    break
-                l_bleu = trainer.test(i)
-                bleu_list.append(l_bleu)
-                f.write("client %s bleu-4: %s\n\n" % (i, l_bleu))
+        bleu_list = []
+        for i in range(len(p_head_state_list)):
+            if i > 3:
+                break
+            trainer.set_model_params(trainer.get_model_params(), i)
+            l_bleu = trainer.test(i)
+            bleu_list.append(l_bleu)
+        with open(os.path.join(args.output_dir, 'fedrod_bleu_test_result.txt'), 'a') as f:
+            for i, bleu in enumerate(bleu_list):
+                f.write("client %s bleu-4: %s\n\n" % (i, bleu))
             f.write("avg bleu-4: %s\n\n" % np.mean(bleu_list))
             f.write("max bleu-4: %s\n\n" % np.max(bleu_list))
             f.write("min bleu-4: %s\n\n" % np.min(bleu_list))

@@ -84,7 +84,7 @@ python -m main.codedoc_fedavg \
   --language "python" \
   --train_data_file "data/store/codedoc/python/train.jsonl" \
   --train_partition_file "data/store/codedoc/python/train_partition_64.pk" \
-  --eval_data_file "data/store/codedoc/python/eval.jsonl" \
+  --eval_data_file "data/store/codedoc/python/valid.jsonl" \
   --partition_method niid_quantity_clients=64_beta=1.0 \
   --fl_algorithm FedAvg \
   --model_type "roberta-base" \
