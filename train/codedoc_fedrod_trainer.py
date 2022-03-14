@@ -144,7 +144,7 @@ class CodeDocFedRodTrainer:
         (goldMap, predictionMap) = bleu.computeMaps(predictions,
                                                     os.path.join(self.args.output_dir, "test.gold"))
         dev_bleu = bleu.bleuFromMaps(goldMap, predictionMap)[0]
-        if not index:
+        if index is None:
             logging.info("global %s = %s " % ("bleu-4", str(dev_bleu)))
         else:
             logging.info("client %s %s = %s " % (index, "bleu-4", str(dev_bleu)))

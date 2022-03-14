@@ -111,8 +111,6 @@ if __name__ == "__main__":
             f.write("global bleu-4: %s\n\n" % g_bleu)
         bleu_list = []
         for i in range(len(p_head_state_list)):
-            if i > 3:
-                break
             trainer.set_model_params(trainer.get_model_params(), i)
             l_bleu = trainer.test(i)
             bleu_list.append(l_bleu)
