@@ -110,7 +110,7 @@ class Seq2Seq(nn.Module):
                 out = torch.tanh(self.dense(out))
                 hidden_states = out.permute([1, 0, 2]).contiguous()[:, -1, :]
                 lm_logits = self.lm_head(hidden_states)
-                if vocab_weight is not None:
+                if vocab_weight is None:
                     out = self.lsm(lm_logits).data
                 else:
                     out = self.lsm(self.p_head(vocab_weight, hidden_states) + lm_logits).data
