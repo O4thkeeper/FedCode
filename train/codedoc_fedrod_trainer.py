@@ -143,7 +143,7 @@ class CodeDocFedRodTrainer:
 
         (goldMap, predictionMap) = bleu.computeMaps(predictions,
                                                     os.path.join(self.args.output_dir, "test.gold"))
-        dev_bleu = round(bleu.bleuFromMaps(goldMap, predictionMap)[0], 2)
+        dev_bleu = bleu.bleuFromMaps(goldMap, predictionMap)[0]
         if not index:
             logging.info("global %s = %s " % ("bleu-4", str(dev_bleu)))
         else:
