@@ -105,6 +105,10 @@ class CodeDocFedRodTrainer:
             logging.info("epoch %s global_loss = %s local_loss = %s" % (idx, log_loss[0] / step, log_loss[1] / step))
             tr_loss += log_loss[0]
 
+        for name, param in model.state_dict().items():
+            if 'p_head' in name:
+                self.p_head_state_list[index][name] = param.clone().detach().cpu()
+
         model.cpu()
 
         return global_step, tr_loss / global_step

@@ -124,8 +124,8 @@ class CodeSearchFedrodTrainer:
 
             tr_loss = [a + b for a, b in zip(log_loss, tr_loss)]
 
-            if args.do_eval:
-                self.eval(index)
+        if args.do_eval:
+            self.eval(index)
         for name, param in self.model.state_dict().items():
             if 'p_head' in name:
                 self.p_head_state_list[index][name] = param.clone().detach().cpu()
