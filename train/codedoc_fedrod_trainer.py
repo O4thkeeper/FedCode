@@ -120,7 +120,7 @@ class CodeDocFedRodTrainer:
             source_ids, source_mask = batch
             with torch.no_grad():
                 encoder_output = model(source_ids=source_ids, source_mask=source_mask, return_encode=True)
-                if not index:
+                if index is None:
                     preds = model.predict(encoder_output, source_ids, source_mask)
                 else:
                     preds = model.predict(encoder_output, source_ids, source_mask,

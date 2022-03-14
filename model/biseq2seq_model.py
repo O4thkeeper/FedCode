@@ -113,7 +113,7 @@ class Seq2Seq(nn.Module):
                 if vocab_weight is None:
                     out = self.lsm(lm_logits).data
                 else:
-                    out = self.lsm(self.p_head(vocab_weight, hidden_states) + lm_logits).data
+                    out = self.lsm(self.p_head(hidden_states, vocab_weight) + lm_logits).data
                 beam.advance(out)
                 input_ids.data.copy_(input_ids.data.index_select(0, beam.getCurrentOrigin()))
                 input_ids = torch.cat((input_ids, beam.getCurrentState()), -1)
