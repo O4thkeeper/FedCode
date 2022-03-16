@@ -66,7 +66,7 @@ class CodeSearchDataManager(BaseDataManager):
     def read_examples_from_txt(self, filename):
         examples = []
         with open(filename, "r", encoding='utf-8') as f:
-            for idx, line in enumerate(f.readlines()):
+            for idx, line in enumerate(f):
                 line = line.strip().split('<CODESPLIT>')
                 if len(line) != 5:
                     continue
@@ -79,7 +79,7 @@ class CodeSearchDataManager(BaseDataManager):
     def read_examples_from_jsonl(self, filename):
         examples = []
         with open(filename, encoding="utf-8") as f:
-            for line in tqdm(f.readlines(), desc='loading mrr test data '):
+            for line in f:
                 data = json.loads(line)
                 doc_token = data['docstring_tokens']
                 code_token = data['code_tokens']
