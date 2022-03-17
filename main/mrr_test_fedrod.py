@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     config = config_class.from_pretrained('microsoft/codebert-base', num_labels=2, finetuning_task='codesearch')
     tokenizer = tokenizer_class.from_pretrained(args.model_type)
-    model = model_class.from_pretrained('microsoft/codebert-base', config=config)
+    model = model_class.from_pretrained('microsoft/codebert-base', config=config, label_count=10)
     model.load_state_dict(torch.load(os.path.join(args.model_name, 'model.pt')))
     model.to(device)
 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     with open(args.label_file, 'rb') as f:
         label_assignment, train_len = pickle.load(f)
-    label_assignment = label_assignment[-2000:]
+    label_assignment = label_assignment[-1000:]
     result_weight_list = []
     for label_weight in label_weight_list:
         result_weight = []

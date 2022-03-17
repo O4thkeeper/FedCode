@@ -24,7 +24,7 @@ python -m main.mrr_test_fedrod \
   --manual_seed 42 \
   --max_seq_length 200
 
-python -m main.mrr_test_fedrod \
+CUDA_VISIBLE_DEVICES=1 python -m main.mrr_test_fedrod \
   --data_file "data/store/codesearch/test_test_3.jsonl" \
   --data_type "mrr_test" \
   --model_type '../../models/roberta-base' \
