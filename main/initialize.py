@@ -47,6 +47,8 @@ def add_code_search_args(parser):
 
     parser.add_argument('--test_partition_file', type=str, default='')
 
+    parser.add_argument('--label_count', type=int, default=2)
+
     parser.add_argument('--server_data', type=str, default='')
 
     parser.add_argument('--partition_method', type=str)

@@ -35,6 +35,8 @@ class CodeSearchDataManager(BaseDataManager):
         with open(partition_file, "rb") as f:
             partition_dict = pickle.load(f)
             num_clients = partition_dict["n_client"]
+            owner_of_data = partition_dict['owner_of_data']
+            label_num_list = partition_dict['label_weight']
         loader_list = []
         data_num_list = []
         data_list = []
@@ -48,7 +50,8 @@ class CodeSearchDataManager(BaseDataManager):
                     all_data = self.read_examples_from_txt(data_file)
                     data_list = [[] for _ in range(num_clients)]
                     for i, example in enumerate(all_data):
-                        data_list[partition_dict[str(i)]].append(example)
+                        # data_list[partition_dict[str(i)]].append(example)
+                        data_list[owner_of_data[i]].append(example)
                 logging.info("process client %s load data" % idx)
                 data = data_list[idx]
                 examples, features, dataset = self.preprocessor.transform(data, data_type)
@@ -61,7 +64,7 @@ class CodeSearchDataManager(BaseDataManager):
             loader_list.append(data_loader)
             data_num_list.append(data_num)
 
-        return loader_list, data_num_list
+        return loader_list, data_num_list, label_num_list
 
     def read_examples_from_txt(self, filename):
         examples = []

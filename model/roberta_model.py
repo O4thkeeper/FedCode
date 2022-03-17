@@ -7,14 +7,14 @@ from transformers.models.roberta.modeling_roberta import RobertaClassificationHe
 
 class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
-    def __init__(self, config):
+    def __init__(self, config, label_count):
         super().__init__(config)
         self.num_labels = config.num_labels
         self.config = config
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.classifier = RobertaClassificationHead(config)
-        self.p_head = HyperClassifier(config.hidden_size, 2)
+        self.p_head = HyperClassifier(config.hidden_size, label_count)
         # self.p_head = RobertaClassificationHead(config)
 
         # Initialize weights and apply final processing

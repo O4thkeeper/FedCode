@@ -194,6 +194,8 @@ def main():
 
     parser.add_argument("--partition_file", type=str, default="")
 
+    parser.add_argument("--label_weight_file", type=str, default="")
+
     parser.add_argument("--seed", type=int, default=42)
 
     parser.add_argument("--cluster_num", type=int)
@@ -205,7 +207,8 @@ def main():
     random.seed(args.seed)
 
     with open(args.label_file, 'rb') as f:
-        label_assignment = pickle.load(f)
+        label_assignment, train_len = pickle.load(f)
+    label_assignment = label_assignment[:train_len]
 
     print("start data processing")
     label_vocab = [i for i in range(args.cluster_num)]
@@ -213,11 +216,21 @@ def main():
                                          len(label_assignment))
 
     owner_of_data = array.array('H', [0 for _ in range(len(label_assignment))])
+    label_weight_list = []
+    result_dict = {}
+    result_dict.update({"n_client": args.client_num, "beta": args.alpha,
+                        "partition_method": "niid_label_clients=%d_beta=%.1f" % (args.client_num, args.alpha)})
+
     for client_id, client_data in enumerate(data_per_client):
+        label_weight = [0 for _ in range(args.cluster_num)]
         for data_id in client_data:
             owner_of_data[data_id] = client_id
+            label_weight[label_assignment[data_id]] += 1
+        label_weight_list.append(label_weight)
+    result_dict['label_weight'] = label_weight_list
+    result_dict['owner_of_data'] = owner_of_data
     with open(args.partition_file, 'wb') as f:
-        pickle.dump(owner_of_data, f)
+        pickle.dump(result_dict, f)
 
 
 if __name__ == '__main__':

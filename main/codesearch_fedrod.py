@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pickle
 
 import torch
 from transformers import RobertaConfig, RobertaTokenizer
@@ -32,26 +33,20 @@ if __name__ == "__main__":
         args.num_labels = 2
         config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
-        model = model_class.from_pretrained(args.model_name, config=config)
+        model = model_class.from_pretrained(args.model_name, config=config, label_count=args.label_count)
         model.to(device)
 
         # data
         preprocessor = CodeSearchPreprocessor(args, tokenizer)
         manager = CodeSearchDataManager(args, preprocessor)
 
-        train_loader_list, train_data_num_list = manager.load_federated_data(False, 'train', args.train_data_file,
-                                                                             args.train_batch_size,
-                                                                             args.train_partition_file)
+        train_loader_list, train_data_num_list, label_num_list = manager.load_federated_data(False, 'train',
+                                                                                             args.train_data_file,
+                                                                                             args.train_batch_size,
+                                                                                             args.train_partition_file)
 
-        cls_num_list = []
-        for loader in train_loader_list:
-            examples = loader.examples
-            cls_num = [0, 0]
-            for example in examples:
-                cls_num[int(example.label)] += 1
-            cls_num_list.append(cls_num)
-        args.cls_num_list = [torch.Tensor(cls_num) for cls_num in cls_num_list]
-        args.label_weight = [torch.Tensor(cls_num) / sum(cls_num) for cls_num in cls_num_list]
+        args.cls_num_list = [torch.Tensor(cls_num) for cls_num in label_num_list]
+        args.label_weight = [torch.Tensor(cls_num) / sum(cls_num) for cls_num in label_num_list]
 
         eval_data_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
 
