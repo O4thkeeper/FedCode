@@ -16,7 +16,7 @@ python -m main.mrr_test_fedrod \
   --data_file "data/store/codesearch/python_test_3.jsonl" \
   --data_type "mrr_test" \
   --model_type '../../models/roberta-base' \
-  --model_name "cache/codesearch/python_64/model/FedRod/" \
+  --model_name "cache/codesearch/python_64_label/model/FedRod/" \
   --label_file data/store/codesearch/train_valid/python/data_label.pk \
   --batch_size 64 \
   --test_batch_size 1000 \
