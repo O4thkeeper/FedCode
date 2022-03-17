@@ -88,19 +88,16 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         mrr_list = []
         for i, ranks in enumerate(local_ranks):
             # mrr = np.mean(1.0 / np.array(ranks))
-            print((1.0 / np.array(ranks)).shape)
-            print(result_weight_list[i].shape)
-            print(np.sum(result_weight_list[i]).shape)
-        #     mrr = (1.0 / np.array(ranks)) * result_weight_list[i] / np.sum(result_weight_list[i])
-        #     mrr_list.append(mrr)
-        #     logging.info("client %s mrr: %s" % (i, mrr))
-        #     f.write("client %s mrr: %s\n\n" % (i, mrr))
-        # logging.info("avg mrr: %s" % (np.mean(mrr_list)))
-        # f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
-        # logging.info("max mrr: %s" % (np.max(mrr_list)))
-        # f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
-        # logging.info("min mrr: %s" % (np.min(mrr_list)))
-        # f.write("min mrr: %s\n\n" % (np.min(mrr_list)))
+            mrr = np.sum((1.0 / np.array(ranks)) * result_weight_list[i] / np.sum(result_weight_list[i]))
+            mrr_list.append(mrr)
+            logging.info("client %s mrr: %s" % (i, mrr))
+            f.write("client %s mrr: %s\n\n" % (i, mrr))
+        logging.info("avg mrr: %s" % (np.mean(mrr_list)))
+        f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
+        logging.info("max mrr: %s" % (np.max(mrr_list)))
+        f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
+        logging.info("min mrr: %s" % (np.min(mrr_list)))
+        f.write("min mrr: %s\n\n" % (np.min(mrr_list)))
 
 
 def test(args, data_loader, model, mat_list):
