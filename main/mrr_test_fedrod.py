@@ -180,7 +180,7 @@ if __name__ == "__main__":
         result_weight = []
         label_dict = label_weight.tolist()
         for label in label_assignment:
-            result_weight.extend(label_dict[label])
+            result_weight.append(label_dict[label])
         result_weight_list.append(np.array(result_weight))
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
