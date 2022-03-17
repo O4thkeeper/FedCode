@@ -48,8 +48,6 @@ if __name__ == "__main__":
         args.cls_num_list = [torch.Tensor(cls_num) for cls_num in label_num_list]
         args.label_weight = [torch.Tensor(cls_num) / sum(cls_num) for cls_num in label_num_list]
 
-        eval_data_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
-
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
         client_func = fl_algorithm(server=False)
@@ -61,7 +59,7 @@ if __name__ == "__main__":
         trainer = CodeSearchFedrodTrainer(args, device, model, p_head_state_list=p_head_state_list)
 
         clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
-        server = server_func(clients, None, eval_data_loader, None, args, device, trainer)
+        server = server_func(clients, None, None, None, args, device, trainer)
         server.run()
 
         save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
