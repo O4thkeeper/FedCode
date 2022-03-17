@@ -30,7 +30,7 @@ if __name__ == "__main__":
     config_class, model_class, tokenizer_class = RobertaConfig, RobertaForSequenceClassification, RobertaTokenizer
 
     if args.do_train:
-        args.num_labels = 2
+        args.num_labels = args.label_count
         config = config_class.from_pretrained(args.model_name, num_labels=2, finetuning_task='codesearch')
         tokenizer = tokenizer_class.from_pretrained(args.model_type)
         model = model_class.from_pretrained(args.model_name, config=config, label_count=args.label_count)
