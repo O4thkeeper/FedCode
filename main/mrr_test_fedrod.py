@@ -88,7 +88,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         mrr_list = []
         for i, ranks in enumerate(local_ranks):
             # mrr = np.mean(1.0 / np.array(ranks))
-            mrr = (1.0 / np.array(ranks)) * result_weight_list / np.sum(result_weight_list)
+            mrr = (1.0 / np.array(ranks)) * result_weight_list[i] / np.sum(result_weight_list[i])
             mrr_list.append(mrr)
             logging.info("client %s mrr: %s" % (i, mrr))
             f.write("client %s mrr: %s\n\n" % (i, mrr))
