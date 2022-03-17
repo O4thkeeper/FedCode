@@ -169,7 +169,7 @@ if __name__ == "__main__":
         p_head.to(args.device)
         h_in = F.relu(p_head.fc1(label_weight_list[i].to(args.device)))
         h_final = p_head.fc2(h_in)
-        mat_list.append(h_final.view(-1, p_head.label_count))
+        mat_list.append(h_final.view(-1, 2))
         p_head.cpu()
 
     with open(args.label_file, 'rb') as f:
