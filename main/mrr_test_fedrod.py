@@ -2,6 +2,7 @@ import argparse
 import gc
 import logging
 import os.path
+import pickle
 import time
 from collections import OrderedDict
 
@@ -26,7 +27,8 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, mat_list):
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, mat_list,
+                          result_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
 
@@ -85,7 +87,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("global mrr: %s\n\n" % (global_mrr))
         mrr_list = []
         for i, ranks in enumerate(local_ranks):
-            mrr = np.mean(1.0 / np.array(ranks))
+            # mrr = np.mean(1.0 / np.array(ranks))
+            mrr = (1.0 / np.array(ranks)) * result_weight_list / np.sum(result_weight_list)
             mrr_list.append(mrr)
             logging.info("client %s mrr: %s" % (i, mrr))
             f.write("client %s mrr: %s\n\n" % (i, mrr))
@@ -156,7 +159,7 @@ if __name__ == "__main__":
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
     label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    p_head = HyperClassifier(config.hidden_size, 2)
+    p_head = HyperClassifier(config.hidden_size, 10)
     mat_list = []
     for i, p_head_state in enumerate(p_head_state_list):
         state = OrderedDict()
@@ -169,8 +172,18 @@ if __name__ == "__main__":
         mat_list.append(h_final.view(-1, p_head.label_count))
         p_head.cpu()
 
+    with open(args.label_file, 'rb') as f:
+        label_assignment, train_len = pickle.load(f)
+    label_assignment = label_assignment[-2000:]
+    result_weight_list = []
+    for label_weight in label_weight_list:
+        result_weight = []
+        for label in label_assignment:
+            result_weight.extend(label_weight[label])
+        result_weight_list.append(np.array(result_weight))
     preprocessor = CodeSearchPreprocessor(args, tokenizer)
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, mat_list)
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, mat_list,
+                          result_weight_list)
