@@ -86,18 +86,29 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
         f.write("global mrr: %s\n\n" % (global_mrr))
         mrr_list = []
+        mrr_global_list = []
         for i, ranks in enumerate(local_ranks):
             # mrr = np.mean(1.0 / np.array(ranks))
             mrr = np.sum((1.0 / np.array(ranks)) * result_weight_list[i] / np.sum(result_weight_list[i]))
+            mrr_global = np.sum((1.0 / np.array(global_ranks)) * result_weight_list[i] / np.sum(result_weight_list[i]))
             mrr_list.append(mrr)
+            mrr_global_list.append(mrr_global)
             logging.info("client %s mrr: %s" % (i, mrr))
             f.write("client %s mrr: %s\n\n" % (i, mrr))
+            logging.info("client %s global mrr: %s" % (i, mrr_global))
+            f.write("client %s global mrr: %s\n\n" % (i, mrr_global))
         logging.info("avg mrr: %s" % (np.mean(mrr_list)))
         f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
         logging.info("max mrr: %s" % (np.max(mrr_list)))
         f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
         logging.info("min mrr: %s" % (np.min(mrr_list)))
         f.write("min mrr: %s\n\n" % (np.min(mrr_list)))
+        logging.info("avg global mrr: %s" % (np.mean(mrr_global_list)))
+        f.write("avg global mrr: %s\n\n" % (np.mean(mrr_global_list)))
+        logging.info("max global mrr: %s" % (np.max(mrr_global_list)))
+        f.write("max global mrr: %s\n\n" % (np.max(mrr_global_list)))
+        logging.info("min global mrr: %s" % (np.min(mrr_global_list)))
+        f.write("min global mrr: %s\n\n" % (np.min(mrr_global_list)))
 
 
 def test(args, data_loader, model, mat_list):
@@ -174,7 +185,7 @@ if __name__ == "__main__":
 
     with open(args.label_file, 'rb') as f:
         label_assignment, train_len = pickle.load(f)
-    label_assignment = label_assignment[-1000:]
+    label_assignment = label_assignment[train_len:]
     result_weight_list = []
     for label_weight in label_weight_list:
         result_weight = []
