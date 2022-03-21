@@ -13,7 +13,7 @@ from utils.model_utils import copy_state_dict
 
 class CodeDocFedRodTrainer:
     def __init__(self, args, device, model, tokenizer, train_dl=None, valid_dl=None, test_dl=None,
-                 p_head_state_list=None, vocab_weight_list=None):
+                 p_head_state_list=None, vocab_weight_list=None, label_weight_list=None):
         self.args = args
         self.device = device
 
@@ -23,7 +23,8 @@ class CodeDocFedRodTrainer:
         self.tokenizer = tokenizer
         self.global_model_params = copy_state_dict(self.model.state_dict())
         self.p_head_state_list = p_head_state_list
-        self.vocab_weight_list = vocab_weight_list
+        # self.vocab_weight_list = vocab_weight_list
+        self.label_weight_list = label_weight_list
 
     def set_data(self, train_dl=None, valid_dl=None, test_dl=None):
         if train_dl is not None:
@@ -75,8 +76,7 @@ class CodeDocFedRodTrainer:
                 batch = tuple(t.to(self.device) for t in batch)
                 source_ids, source_mask, target_ids, target_mask = batch
                 loss, _, _, local_loss = model(source_ids=source_ids, source_mask=source_mask, target_ids=target_ids,
-                                               target_mask=target_mask, train_p_head=True,
-                                               vocab_weight=self.vocab_weight_list[index].to(self.device))
+                                               target_mask=target_mask, train_p_head=True)
 
                 if self.args.gradient_accumulation_steps > 1:
                     loss = loss / args.gradient_accumulation_steps
@@ -127,8 +127,7 @@ class CodeDocFedRodTrainer:
                 if index is None:
                     preds = model.predict(encoder_output, source_ids, source_mask)
                 else:
-                    preds = model.predict(encoder_output, source_ids, source_mask,
-                                          self.vocab_weight_list[index].to(self.device))
+                    preds = model.predict(encoder_output, source_ids, source_mask, p_head_predict=True)
                 for pred in preds:
                     t = pred[0].cpu().numpy()
                     t = list(t)
@@ -147,10 +146,11 @@ class CodeDocFedRodTrainer:
 
         (goldMap, predictionMap) = bleu.computeMaps(predictions,
                                                     os.path.join(self.args.output_dir, "test.gold"))
-        dev_bleu = bleu.bleuFromMaps(goldMap, predictionMap)[0]
         if index is None:
+            dev_bleu = bleu.bleuFromMaps(goldMap, predictionMap)[0]
             logging.info("global %s = %s " % ("bleu-4", str(dev_bleu)))
         else:
+            dev_bleu = bleu.bleuFromMapsWithWeight(goldMap, predictionMap, self.label_weight_list[index])[0]
             logging.info("client %s %s = %s " % (index, "bleu-4", str(dev_bleu)))
 
         model.cpu()

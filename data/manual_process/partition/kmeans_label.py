@@ -58,14 +58,20 @@ def main():
                 nl = ' '.join(nl.strip().split())
                 test_corpus.append(nl)
     elif args.dataset == 'codedoc':
-        with open(args.data_file, encoding="utf-8") as f:
+        with open(args.train_data_file, encoding="utf-8") as f:
             for line in tqdm(f):
                 line = line.strip()
                 js = json.loads(line)
                 nl = ' '.join(js['docstring_tokens']).replace('\n', '')
                 nl = ' '.join(nl.strip().split())
                 train_corpus.append(nl)
-        # todo finish test
+        with open(args.test_data_file, encoding="utf-8") as f:
+            for line in tqdm(f):
+                line = line.strip()
+                js = json.loads(line)
+                nl = ' '.join(js['docstring_tokens']).replace('\n', '')
+                nl = ' '.join(nl.strip().split())
+                train_corpus.append(nl)
     else:
         raise RuntimeError('dataset not support')
 

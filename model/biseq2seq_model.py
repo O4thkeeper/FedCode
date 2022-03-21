@@ -90,7 +90,7 @@ class Seq2Seq(nn.Module):
         else:
             return self.predict(encoder_output, source_ids, source_mask)
 
-    def predict(self, encoder_output, source_ids, source_mask, vocab_weight=None):
+    def predict(self, encoder_output, source_ids, source_mask, p_head_predict=None):
         preds = []
         zero = torch.cuda.LongTensor(1).fill_(0)
         for i in range(source_ids.shape[0]):
@@ -110,7 +110,7 @@ class Seq2Seq(nn.Module):
                 out = torch.tanh(self.dense(out))
                 hidden_states = out.permute([1, 0, 2]).contiguous()[:, -1, :]
                 lm_logits = self.lm_head(hidden_states)
-                if vocab_weight is None:
+                if p_head_predict is None:
                     out = self.lsm(lm_logits).data
                 else:
                     out = self.lsm(self.p_head(hidden_states) + lm_logits).data

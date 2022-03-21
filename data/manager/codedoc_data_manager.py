@@ -41,6 +41,8 @@ class CodeDocDataManager(BaseDataManager):
         with open(partition_file, "rb") as f:
             partition_dict = pickle.load(f)
             num_clients = partition_dict["n_client"]
+            owner_of_data = partition_dict['owner_of_data']
+            label_num_list = partition_dict['label_weight']
         loader_list = []
         data_num_list = []
         data_list = []
@@ -54,24 +56,21 @@ class CodeDocDataManager(BaseDataManager):
                     all_data = self._read_examples_from_jsonl(data_file)
                     data_list = [[] for _ in range(num_clients)]
                     for i, example in tqdm(enumerate(all_data), desc="loading client data"):
-                        data_list[partition_dict[str(i)]].append(example)
+                        # data_list[partition_dict[str(i)]].append(example)
+                        data_list[owner_of_data[i]].append(example)
                 logging.info("process client %s load data" % idx)
                 data = data_list[idx]
-                if data_type == 'test':
-                    data = random.sample(data, min(1000, len(data)))
                 examples, features, dataset = self.preprocessor.transform(data, data_type)
                 with open(res, "wb") as handle:
                     pickle.dump((examples, features, dataset), handle)
 
             sampler = RandomSampler(dataset)
-            data_loader = BaseDataLoader(examples, features, dataset,
-                                         sampler=sampler,
-                                         batch_size=batch_size)
+            data_loader = BaseDataLoader(examples, features, dataset, sampler=sampler, batch_size=batch_size)
             data_num = len(examples)
             loader_list.append(data_loader)
             data_num_list.append(data_num)
 
-        return loader_list, data_num_list
+        return loader_list, data_num_list, label_num_list
 
     def _read_examples_from_jsonl(self, filename):
         examples = []

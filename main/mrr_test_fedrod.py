@@ -34,6 +34,8 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
 
     np.random.shuffle(idxs)
     data = data[idxs]
+    for i in range(len(result_weight_list)):
+        result_weight_list[i] = result_weight_list[i][idxs]
     batched_data = chunked(data, test_batch_size)
 
     global_ranks = []

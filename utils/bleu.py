@@ -199,6 +199,18 @@ def bleuFromMaps(m1, m2):
     return [s * 100.0 / num for s in score]
 
 
+def bleuFromMapsWithWeight(m1, m2, weight):
+    score = [0] * 5
+    num = 0.0
+
+    for key in m1:
+        if key in m2:
+            bl = bleu(m1[key], m2[key][0])
+            score = [score[i] + bl[i] * weight[int(key)] for i in range(0, len(bl))]
+            num += weight[int(key)]
+    return [s * 100.0 / num for s in score]
+
+
 if __name__ == '__main__':
     reference_file = sys.argv[1]
     predictions = []
@@ -206,4 +218,3 @@ if __name__ == '__main__':
         predictions.append(row)
     (goldMap, predictionMap) = computeMaps(predictions, reference_file)
     print(bleuFromMaps(goldMap, predictionMap)[0])
-
