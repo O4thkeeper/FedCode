@@ -106,23 +106,18 @@ class HyperClassifier(nn.Module):
         super(HyperClassifier, self).__init__()
         self.f_size = f_size
         self.label_count = label_count
-        # self.fc1 = nn.Linear(f_size, f_size)
-        # self.fc2 = nn.Linear(f_size, f_size * label_count)
-        self.fc1 = nn.Linear(self.label_count, self.f_size)
-        self.fc2 = nn.Linear(self.f_size, 2 * self.f_size)
+
+        # self.fc1 = nn.Linear(self.label_count, self.f_size)
+        # self.fc2 = nn.Linear(self.f_size, 2 * self.f_size)
+        self.fc1 = nn.Linear(self.f_size, 1)
+        self.fc2 = nn.Linear(self.f_size, 2)
 
     def forward(self, x, feat):
-        # h_in = F.relu(self.fc1(feat))
-        # h_final = self.fc2(h_in)
-        # h_final = h_final[0, :].view(-1, self.label_count)
         feat = feat[:, 0, :]
-        h_in = F.relu(self.fc1(x))
-        h_final = self.fc2(h_in)
-
-        # result = []
-        # for i in range(x.shape[0]):
-        #     result.append(torch.matmul(x[i], h_final[i].view(-1, self.label_count)))
-        # h_final = h_final[0, :].view(-1, self.label_count)
-        h_final = torch.matmul(feat, h_final.view(-1, 2))
+        # h_in = F.relu(self.fc1(x))
+        # h_final = self.fc2(h_in)
+        # h_final = torch.matmul(feat, h_final.view(-1, 2))
+        alpha = self.fc1(feat)
+        h_final = self.fc2(feat) * alpha
 
         return h_final
