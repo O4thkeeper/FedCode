@@ -14,7 +14,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
 
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         self.classifier = RobertaClassificationHead(config)
-        self.p_head = HyperClassifier(config.hidden_size, label_count)
+        self.p_head = HyperClassifier(config)
         # self.p_head = RobertaClassificationHead(config)
 
         # Initialize weights and apply final processing
@@ -102,22 +102,22 @@ def balanced_softmax_loss(labels, logits, sample_per_class, reduction):
 
 class HyperClassifier(nn.Module):
     # f_size: config.hidden_size  z_dim:2
-    def __init__(self, f_size, label_count):
+    def __init__(self, config):
         super(HyperClassifier, self).__init__()
-        self.f_size = f_size
-        self.label_count = label_count
+        # self.f_size = f_size
+        # self.label_count = label_count
 
         # self.fc1 = nn.Linear(self.label_count, self.f_size)
         # self.fc2 = nn.Linear(self.f_size, 2 * self.f_size)
-        self.fc1 = nn.Linear(self.f_size, 1)
-        self.fc2 = nn.Linear(self.f_size, 2)
+        self.fc1 = nn.Linear(config.hidden_size, 1)
+        self.fc2 = RobertaClassificationHead(config)
 
     def forward(self, x, feat):
-        feat = feat[:, 0, :]
+        # feat = feat[:, 0, :]
         # h_in = F.relu(self.fc1(x))
         # h_final = self.fc2(h_in)
         # h_final = torch.matmul(feat, h_final.view(-1, 2))
-        alpha = self.fc1(feat)
+        alpha = self.fc1(feat[:, 0, :])
         h_final = self.fc2(feat) * alpha
 
         return h_final
