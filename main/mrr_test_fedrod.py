@@ -188,7 +188,7 @@ if __name__ == "__main__":
     not_sample = []
     not_sample_count = 0
     for i in range(args.label_count):
-        idx = np.where(label_assignment == i).tolist()
+        idx = np.where(label_assignment == i)[0].tolist()
         sample_idx.extend(idx[:20])
         not_sample.extend(idx[20:])
         not_sample_count += max(0, 20 - len(idx))
