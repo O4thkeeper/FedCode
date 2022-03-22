@@ -187,6 +187,9 @@ if __name__ == "__main__":
     # p_head.to(device)
     p_head_list = [HyperClassifier(config) for _ in range(len(p_head_state_list))]
     for p_head, state in zip(p_head_list, p_head_state_list):
+        name_state = OrderedDict()
+        for key, value in state.items():
+            name_state['.'.join(key.split('.')[1:])] = value
         p_head.load_state_dict(state)
         p_head.to(device)
 
