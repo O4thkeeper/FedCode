@@ -190,7 +190,7 @@ if __name__ == "__main__":
         name_state = OrderedDict()
         for key, value in state.items():
             name_state['.'.join(key.split('.')[1:])] = value
-        p_head.load_state_dict(state)
+        p_head.load_state_dict(name_state)
         p_head.to(device)
 
     with open(args.label_file, 'rb') as f:
