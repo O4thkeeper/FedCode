@@ -27,7 +27,7 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, mat_list,
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list, p_head_state_list,
                           result_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
@@ -39,7 +39,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
     batched_data = chunked(data, test_batch_size)
 
     global_ranks = []
-    local_ranks = [[] for _ in range(len(mat_list))]
+    local_ranks = [[] for _ in range(len(p_head_state_list))]
 
     for batch_idx, batch_data in enumerate(batched_data):
         if len(batch_data) < test_batch_size:
@@ -61,7 +61,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        global_preds, local_preds = test(args, data_loader, test_model, mat_list)
+        global_preds, local_preds = test(args, data_loader, test_model, p_head_list, p_head_state_list)
 
         batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
@@ -89,16 +89,20 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("global mrr: %s\n\n" % (global_mrr))
         mrr_list = []
         mrr_global_list = []
+        mrr_pre_list = []
         for i, ranks in enumerate(local_ranks):
-            # mrr = np.mean(1.0 / np.array(ranks))
+            mrr_pre = np.mean(1.0 / np.array(ranks))
             mrr = np.sum((1.0 / np.array(ranks)) * result_weight_list[i] / np.sum(result_weight_list[i]))
             mrr_global = np.sum((1.0 / np.array(global_ranks)) * result_weight_list[i] / np.sum(result_weight_list[i]))
             mrr_list.append(mrr)
             mrr_global_list.append(mrr_global)
+            mrr_pre_list.append(mrr_pre)
             logging.info("client %s mrr: %s" % (i, mrr))
             f.write("client %s mrr: %s\n\n" % (i, mrr))
             logging.info("client %s global mrr: %s" % (i, mrr_global))
             f.write("client %s global mrr: %s\n\n" % (i, mrr_global))
+            logging.info("client %s pre mrr: %s" % (i, mrr_pre))
+            f.write("client %s pre mrr: %s\n\n" % (i, mrr_pre))
         logging.info("avg mrr: %s" % (np.mean(mrr_list)))
         f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
         logging.info("max mrr: %s" % (np.max(mrr_list)))
@@ -111,9 +115,15 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("max global mrr: %s\n\n" % (np.max(mrr_global_list)))
         logging.info("min global mrr: %s" % (np.min(mrr_global_list)))
         f.write("min global mrr: %s\n\n" % (np.min(mrr_global_list)))
+        logging.info("avg pre mrr: %s" % (np.mean(mrr_pre_list)))
+        f.write("avg pre mrr: %s\n\n" % (np.mean(mrr_pre_list)))
+        logging.info("max pre mrr: %s" % (np.max(mrr_pre_list)))
+        f.write("max pre mrr: %s\n\n" % (np.max(mrr_pre_list)))
+        logging.info("min pre mrr: %s" % (np.min(mrr_pre_list)))
+        f.write("min pre mrr: %s\n\n" % (np.min(mrr_pre_list)))
 
 
-def test(args, data_loader, model, mat_list):
+def test(args, data_loader, model, p_head_list, p_head_state_list):
     global_preds = None
     local_preds = []
     for batch in tqdm(data_loader, desc="Testing"):
@@ -129,8 +139,9 @@ def test(args, data_loader, model, mat_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, mat in enumerate(mat_list):
-                local_logits = torch.matmul(sequence_output.detach()[:, 0, :], mat) + global_logits.detach()
+            for i, p_head_state in enumerate(p_head_state_list):
+                # p_head.load_state_dict(p_head_state)
+                local_logits = p_head_list[i](None, sequence_output)
                 local_logits_list.append(local_logits)
 
         if global_preds is None:
@@ -140,7 +151,7 @@ def test(args, data_loader, model, mat_list):
         else:
             global_preds = np.append(global_preds, global_logits.detach().cpu().numpy(), axis=0)
             for i, local_logits in enumerate(local_logits_list):
-                local_preds[i] = np.append(local_preds[i], local_logits_list[i].detach().cpu().numpy(), axis=0)
+                local_preds[i] = np.append(local_preds[i], local_logits.detach().cpu().numpy(), axis=0)
 
     return global_preds.tolist(), [preds.tolist() for preds in local_preds]
 
@@ -172,18 +183,12 @@ if __name__ == "__main__":
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
     label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    p_head = HyperClassifier(config.hidden_size, 10)
-    mat_list = []
-    for i, p_head_state in enumerate(p_head_state_list):
-        state = OrderedDict()
-        for key, value in p_head_state.items():
-            state['.'.join(key.split('.')[1:])] = value
+    # p_head = HyperClassifier(config)
+    # p_head.to(device)
+    p_head_list = [HyperClassifier(config) for _ in range(len(p_head_state_list))]
+    for p_head, state in zip(p_head_list, p_head_state_list):
         p_head.load_state_dict(state)
-        p_head.to(args.device)
-        h_in = F.relu(p_head.fc1(label_weight_list[i].to(args.device)))
-        h_final = p_head.fc2(h_in)
-        mat_list.append(h_final.view(-1, 2))
-        p_head.cpu()
+        p_head.to(device)
 
     with open(args.label_file, 'rb') as f:
         label_assignment, train_len = pickle.load(f)
@@ -199,5 +204,5 @@ if __name__ == "__main__":
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, mat_list,
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list, p_head_state_list,
                           result_weight_list)
