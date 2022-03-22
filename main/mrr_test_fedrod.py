@@ -194,6 +194,7 @@ if __name__ == "__main__":
         not_sample_count += max(0, 20 - len(idx))
     sample_idx.extend(not_sample[:not_sample_count])
 
+    test_raw_examples = np.array(test_raw_examples, dtype=np.object)
     test_raw_examples = test_raw_examples[sample_idx]
     label_assignment = label_assignment[sample_idx]
     logging.info('sample test data:%s ,class not sample enough:%s ' % (len(test_raw_examples), not_sample_count))
