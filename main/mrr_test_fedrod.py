@@ -169,8 +169,6 @@ if __name__ == "__main__":
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
     label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    # p_head = HyperClassifier(config)
-    # p_head.to(device)
     p_head_list = [HyperClassifier(config) for _ in range(len(p_head_state_list))]
     for p_head, state in zip(p_head_list, p_head_state_list):
         name_state = OrderedDict()
@@ -179,9 +177,27 @@ if __name__ == "__main__":
         p_head.load_state_dict(name_state)
         p_head.to(device)
 
+    preprocessor = CodeSearchPreprocessor(args, tokenizer)
+    manager = CodeSearchDataManager(args, preprocessor)
+    test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
+
     with open(args.label_file, 'rb') as f:
         label_assignment, train_len = pickle.load(f)
-    label_assignment = label_assignment[train_len:]
+    label_assignment = np.array(label_assignment[train_len:])
+    sample_idx = []
+    not_sample = []
+    not_sample_count = 0
+    for i in range(args.label_count):
+        idx = np.where(label_assignment == i).tolist()
+        sample_idx.extend(idx[:20])
+        not_sample.extend(idx[20:])
+        not_sample_count += max(0, 20 - len(idx))
+    sample_idx.extend(not_sample[:not_sample_count])
+
+    test_raw_examples = test_raw_examples[sample_idx]
+    label_assignment = label_assignment[sample_idx]
+    logging.info('sample test data:%s ,class not sample enough:%s ' % (len(test_raw_examples), not_sample_count))
+
     result_weight_list = []
     for label_weight in label_weight_list:
         result_weight = []
@@ -189,10 +205,6 @@ if __name__ == "__main__":
         for label in label_assignment:
             result_weight.append(label_dict[label])
         result_weight_list.append(np.array(result_weight))
-    preprocessor = CodeSearchPreprocessor(args, tokenizer)
-    manager = CodeSearchDataManager(args, preprocessor)
-
-    test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
     process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list,
                           p_head_state_list,
                           result_weight_list)
