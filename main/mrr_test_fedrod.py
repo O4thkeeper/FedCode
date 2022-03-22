@@ -27,7 +27,8 @@ def format_str(string):
     return string
 
 
-def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list, p_head_state_list,
+def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list,
+                          p_head_state_list,
                           result_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
@@ -84,9 +85,10 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         os.makedirs(args.output_dir, exist_ok=True)
     with open(os.path.join(args.output_dir, 'fedrod_mrr_test_result.txt'), 'a') as f:
         global_mrr = np.mean(1.0 / np.array(global_ranks))
-        logging.info("global mrr: %s" % (global_mrr))
+        print("global mrr: %s" % (global_mrr))
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
         f.write("global mrr: %s\n\n" % (global_mrr))
+        f.write("mrr - global mrr - pre mrr\n\n")
         mrr_list = []
         mrr_global_list = []
         mrr_pre_list = []
@@ -97,30 +99,14 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
             mrr_list.append(mrr)
             mrr_global_list.append(mrr_global)
             mrr_pre_list.append(mrr_pre)
-            logging.info("client %s mrr: %s" % (i, mrr))
-            f.write("client %s mrr: %s\n\n" % (i, mrr))
-            logging.info("client %s global mrr: %s" % (i, mrr_global))
-            f.write("client %s global mrr: %s\n\n" % (i, mrr_global))
-            logging.info("client %s pre mrr: %s" % (i, mrr_pre))
-            f.write("client %s pre mrr: %s\n\n" % (i, mrr_pre))
-        logging.info("avg mrr: %s" % (np.mean(mrr_list)))
-        f.write("avg mrr: %s\n\n" % (np.mean(mrr_list)))
-        logging.info("max mrr: %s" % (np.max(mrr_list)))
-        f.write("max mrr: %s\n\n" % (np.max(mrr_list)))
-        logging.info("min mrr: %s" % (np.min(mrr_list)))
-        f.write("min mrr: %s\n\n" % (np.min(mrr_list)))
-        logging.info("avg global mrr: %s" % (np.mean(mrr_global_list)))
-        f.write("avg global mrr: %s\n\n" % (np.mean(mrr_global_list)))
-        logging.info("max global mrr: %s" % (np.max(mrr_global_list)))
-        f.write("max global mrr: %s\n\n" % (np.max(mrr_global_list)))
-        logging.info("min global mrr: %s" % (np.min(mrr_global_list)))
-        f.write("min global mrr: %s\n\n" % (np.min(mrr_global_list)))
-        logging.info("avg pre mrr: %s" % (np.mean(mrr_pre_list)))
-        f.write("avg pre mrr: %s\n\n" % (np.mean(mrr_pre_list)))
-        logging.info("max pre mrr: %s" % (np.max(mrr_pre_list)))
-        f.write("max pre mrr: %s\n\n" % (np.max(mrr_pre_list)))
-        logging.info("min pre mrr: %s" % (np.min(mrr_pre_list)))
-        f.write("min pre mrr: %s\n\n" % (np.min(mrr_pre_list)))
+            print('client %s: %s, %s, %s' % (i, mrr, mrr_global, mrr_pre))
+            f.write('client %s: %s, %s, %s\n\n' % (i, mrr, mrr_global, mrr_pre))
+        print("avg mrr: %s, %s, %s" % (np.mean(mrr_list), np.mean(mrr_global_list), np.mean(mrr_pre_list)))
+        f.write("avg mrr: %s, %s, %s" % (np.mean(mrr_list), np.mean(mrr_global_list), np.mean(mrr_pre_list)))
+        print("max mrr: %s, %s, %s" % (np.max(mrr_list), np.max(mrr_global_list), np.max(mrr_pre_list)))
+        f.write("max mrr: %s, %s, %s" % (np.max(mrr_list), np.max(mrr_global_list), np.max(mrr_pre_list)))
+        print("min mrr: %s, %s, %s" % (np.min(mrr_list), np.min(mrr_global_list), np.min(mrr_pre_list)))
+        f.write("min mrr: %s, %s, %s" % (np.min(mrr_list), np.min(mrr_global_list), np.min(mrr_pre_list)))
 
 
 def test(args, data_loader, model, p_head_list, p_head_state_list):
@@ -139,9 +125,9 @@ def test(args, data_loader, model, p_head_list, p_head_state_list):
             sequence_output = model(**inputs)
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
-            for i, p_head_state in enumerate(p_head_state_list):
+            for i, p_head in enumerate(p_head_list):
                 # p_head.load_state_dict(p_head_state)
-                local_logits = p_head_list[i](None, sequence_output)
+                local_logits = p_head(None, sequence_output) + global_logits.detach()
                 local_logits_list.append(local_logits)
 
         if global_preds is None:
@@ -207,5 +193,6 @@ if __name__ == "__main__":
     manager = CodeSearchDataManager(args, preprocessor)
 
     test_raw_examples = manager.read_examples_from_jsonl(args.data_file)
-    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list, p_head_state_list,
+    process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list,
+                          p_head_state_list,
                           result_weight_list)
