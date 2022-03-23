@@ -28,7 +28,7 @@ def format_str(string):
 
 
 def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size, p_head_list,
-                          p_head_state_list,
+                          label_weight_list,
                           result_weight_list):
     idxs = np.arange(len(test_raw_examples))
     data = np.array(test_raw_examples, dtype=np.object)
@@ -62,7 +62,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
                                      pin_memory=True,
                                      drop_last=False)
         logging.info("***** Running Test %s *****" % batch_idx)
-        global_preds, local_preds = test(args, data_loader, test_model, p_head_list, p_head_state_list)
+        global_preds, local_preds = test(args, data_loader, test_model, p_head_list, label_weight_list)
 
         batched_logits = chunked(global_preds, test_batch_size)
         for batch_idx, batch_data in enumerate(batched_logits):
@@ -109,13 +109,12 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         f.write("min mrr: %s, %s, %s" % (np.min(mrr_list), np.min(mrr_global_list), np.min(mrr_pre_list)))
 
 
-def test(args, data_loader, model, p_head_list, p_head_state_list):
+def test(args, data_loader, model, p_head_list, label_weight_list):
     global_preds = None
     local_preds = []
+    model.eval()
     for batch in tqdm(data_loader, desc="Testing"):
-        model.eval()
         batch = tuple(t.to(args.device) for t in batch)
-
         with torch.no_grad():
             inputs = {'input_ids': batch[0],
                       'attention_mask': batch[1],
@@ -126,8 +125,7 @@ def test(args, data_loader, model, p_head_list, p_head_state_list):
             global_logits = model.forward_global(sequence_output)
             local_logits_list = []
             for i, p_head in enumerate(p_head_list):
-                # p_head.load_state_dict(p_head_state)
-                local_logits = p_head(None, sequence_output) + global_logits.detach()
+                local_logits = p_head(label_weight_list[i].to(args.device), sequence_output) + global_logits
                 local_logits_list.append(local_logits)
 
         if global_preds is None:
@@ -169,7 +167,7 @@ if __name__ == "__main__":
 
     p_head_state_list = torch.load(os.path.join(args.model_name, 'p_head.pt'))
     label_weight_list = torch.load(os.path.join(args.model_name, 'label_weight.pt'))
-    p_head_list = [HyperClassifier(config) for _ in range(len(p_head_state_list))]
+    p_head_list = [HyperClassifier(config.hidden_size, args.label_count) for _ in range(len(p_head_state_list))]
     for p_head, state in zip(p_head_list, p_head_state_list):
         name_state = OrderedDict()
         for key, value in state.items():
@@ -193,7 +191,8 @@ if __name__ == "__main__":
         not_sample.extend(idx[20:])
         not_sample_count += max(0, 20 - len(idx))
     sample_idx.extend(not_sample[:not_sample_count])
-    # todo save sample idx
+    with open(os.path.join(args.model_name, 'sample_idx.pt'), 'wb') as f:
+        pickle.dump(sample_idx, f)
 
     test_raw_examples = np.array(test_raw_examples, dtype=np.object)
     test_raw_examples = test_raw_examples[sample_idx]
@@ -208,5 +207,5 @@ if __name__ == "__main__":
             result_weight.append(label_dict[label])
         result_weight_list.append(np.array(result_weight))
     process_data_and_test(test_raw_examples, model, preprocessor, args, args.test_batch_size, p_head_list,
-                          p_head_state_list,
+                          label_weight_list,
                           result_weight_list)
