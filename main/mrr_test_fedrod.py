@@ -3,6 +3,7 @@ import gc
 import logging
 import os.path
 import pickle
+import random
 import time
 from collections import OrderedDict
 
@@ -190,7 +191,7 @@ if __name__ == "__main__":
         sample_idx.extend(idx[:20])
         not_sample.extend(idx[20:])
         not_sample_count += max(0, 20 - len(idx))
-    sample_idx.extend(not_sample[:not_sample_count])
+    sample_idx.extend(random.sample(not_sample, not_sample_count))
     with open(os.path.join(args.model_name, 'sample_idx.pt'), 'wb') as f:
         pickle.dump(sample_idx, f)
 
