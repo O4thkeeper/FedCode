@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     config = config_class.from_pretrained('microsoft/codebert-base', num_labels=2, finetuning_task='codesearch')
     tokenizer = tokenizer_class.from_pretrained(args.model_type)
-    model = model_class.from_pretrained('microsoft/codebert-base', config=config, label_count=10)
+    model = model_class.from_pretrained('microsoft/codebert-base', config=config, label_count=args.label_count)
     model.load_state_dict(torch.load(os.path.join(args.model_name, 'model.pt')))
     model.to(device)
 
