@@ -135,6 +135,52 @@ class CodeSearchFedrodTrainer:
 
         return global_step, [tl / global_step for tl in tr_loss]
 
+    def train_p_head(self, index):
+
+        self.model.to(self.device)
+        iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
+        _, _, phead_optimizer, p_scheduler = self.build_optimizer(self.model, iteration_in_total)
+        local_loss_fn = torch.nn.CrossEntropyLoss().to(self.device)
+
+        args = self.args
+        for k, v in self.model.named_parameters():
+            if 'p_head' not in k:
+                v.requires_grad = False
+        self.model.zero_grad()
+        self.model.train()
+
+        for idx in range(args.epochs):
+            bar = tqdm(self.train_dl, total=len(self.train_dl))
+            for batch in bar:
+                batch = tuple(t.to(self.device) for t in batch)
+                inputs = {'input_ids': batch[0],
+                          'attention_mask': batch[1],
+                          'token_type_ids': batch[2] if args.model_type in ['bert', 'xlnet'] else None,
+                          'labels': batch[3]}
+
+                self.model.zero_grad()
+                sequence_output = self.model(**inputs)
+                logits = self.model.forward_global(sequence_output)
+
+                labels = batch[3]
+
+                logits_local = self.model.forward_local_bias(self.label_weight[index].to(self.device),
+                                                             sequence_output.detach()) + logits.detach()
+                local_loss = local_loss_fn(logits_local.view(-1, self.num_labels), labels.view(-1))
+                local_loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
+                phead_optimizer.step()
+                p_scheduler.step()
+
+                bar.set_description(
+                    "epoch {} local_loss {}".format(idx, local_loss.item()))
+
+        for name, param in self.model.state_dict().items():
+            if 'p_head' in name:
+                self.p_head_state_list[index][name] = param.clone().detach().cpu()
+
+        self.model.cpu()
+
     def eval(self, index):
         self.model.to(self.device)
         logging.info("***** Running Evaluation *****")
@@ -192,27 +238,7 @@ class CodeSearchFedrodTrainer:
         p_scheduler = get_linear_schedule_with_warmup(phead_optimizer, num_warmup_steps=warmup_steps,
                                                       num_training_steps=iteration_in_total)
 
-        self.freeze_model_parameters(model)
-
         optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps,
                                                     num_training_steps=iteration_in_total)
         return optimizer, scheduler, phead_optimizer, p_scheduler
-
-    def freeze_model_parameters(self, model):
-        modules = list()
-        logging.info("freeze layers: %s" % str(self.freeze_layers))
-        for layer_idx in self.freeze_layers:
-            if layer_idx == "e":
-                modules.append(model.distilbert.embeddings)
-            else:
-                modules.append(model.distilbert.transformer.layer[int(layer_idx)])
-        for module in modules:
-            for param in module.parameters():
-                param.requires_grad = False
-        logging.info(self.get_parameter_number(model))
-
-    def get_parameter_number(self, net):
-        total_num = sum(p.numel() for p in net.parameters())
-        trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
-        return {'Total': total_num, 'Trainable': trainable_num}

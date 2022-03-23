@@ -193,6 +193,7 @@ if __name__ == "__main__":
         not_sample.extend(idx[20:])
         not_sample_count += max(0, 20 - len(idx))
     sample_idx.extend(not_sample[:not_sample_count])
+    # todo save sample idx
 
     test_raw_examples = np.array(test_raw_examples, dtype=np.object)
     test_raw_examples = test_raw_examples[sample_idx]

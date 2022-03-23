@@ -24,6 +24,8 @@ class FedRodServerManager():
 
             if self.args.do_eval:
                 self.aggregator.eval_global_model()
+        current_model = self.aggregator.get_global_model_params()
+        self.clients.train_local(self.client_num,current_model)
 
     def test(self):
         self.aggregator.test_on_server()

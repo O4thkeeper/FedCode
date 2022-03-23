@@ -25,5 +25,7 @@ class ClientTrainer(object):
         model_params = self.trainer.get_model_params()
         return model_params, self.train_data_num_list[index]
 
-    def test(self):
-        pass
+    def train_local(self, index, current_model):
+        self.trainer.set_model_params(current_model, index)
+        self.trainer.set_data(self.train_loader_list[index])
+        self.trainer.train_p_head(index)
