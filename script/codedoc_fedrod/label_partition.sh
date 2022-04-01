@@ -29,3 +29,5 @@ python -m data.manual_process.partition.label_partition \
   --seed 42 \
   --cluster_num 10 \
   --alpha 1.0
+
+#todo fill

@@ -30,7 +30,7 @@ python -m main.codesearch_fedrod \
   --train_data_file "data/store/codesearch/train_valid/python/train.txt" \
   --train_partition_file "data/store/codesearch/train_valid/python/label_partition.pk" \
   --partition_method niid_label_clients=64_beta=1.0 \
-  --label_count 10 \
+  --label_count 100 \
   --fl_algorithm "FedRod" \
   --model_type '../../models/roberta-base' \
   --model_name '../../models/codebert-base' \

@@ -86,6 +86,7 @@ def process_data_and_test(test_raw_examples, test_model, preprocessor, args, tes
         os.makedirs(args.output_dir, exist_ok=True)
     with open(os.path.join(args.output_dir, 'fedrod_mrr_test_result.txt'), 'a') as f:
         global_mrr = np.mean(1.0 / np.array(global_ranks))
+        print(global_ranks)
         print("global mrr: %s" % (global_mrr))
         f.write("TEST TIME:%s\n" % time.asctime(time.localtime(time.time())))
         f.write("global mrr: %s\n\n" % (global_mrr))
@@ -188,9 +189,9 @@ if __name__ == "__main__":
     not_sample_count = 0
     for i in range(args.label_count):
         idx = np.where(label_assignment == i)[0].tolist()
-        sample_idx.extend(idx[:20])
-        not_sample.extend(idx[20:])
-        not_sample_count += max(0, 20 - len(idx))
+        sample_idx.extend(idx[:40])
+        not_sample.extend(idx[40:])
+        not_sample_count += max(0, 40 - len(idx))
     sample_idx.extend(random.sample(not_sample, not_sample_count))
     with open(os.path.join(args.model_name, 'sample_idx.pt'), 'wb') as f:
         pickle.dump(sample_idx, f)

@@ -29,3 +29,19 @@ python -m data.manual_process.partition.label_partition \
   --seed 42 \
   --cluster_num 10 \
   --alpha 1.0
+
+python -m data.manual_process.partition.kmeans_label \
+  --cluster_number 100 \
+  --batch_size 64 \
+  --train_data_file data/store/codesearch/train_valid/go/train.txt \
+  --test_data_file data/store/codesearch/go_test_0.jsonl \
+  --label_file data/store/codesearch/train_valid/go/data_label.pk \
+  --dataset codesearch
+
+python -m data.manual_process.partition.label_partition \
+  --client_num 64 \
+  --label_file data/store/codesearch/train_valid/go/data_label.pk \
+  --partition_file data/store/codesearch/train_valid/go/label_partition.pk \
+  --seed 42 \
+  --cluster_num 100 \
+  --alpha 1.0
