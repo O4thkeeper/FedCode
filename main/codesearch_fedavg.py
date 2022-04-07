@@ -42,6 +42,9 @@ if __name__ == "__main__":
         train_loader_list, train_data_num_list = manager.load_federated_data(False, 'train', args.train_data_file,
                                                                              args.train_batch_size,
                                                                              args.train_partition_file)
+        eval_loader = None
+        if args.do_eval:
+            manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
@@ -50,7 +53,7 @@ if __name__ == "__main__":
         trainer = CodeSearchTrainer(args, device, model)
 
         clients = client_func(train_loader_list, train_data_num_list, None, device, args, trainer)
-        server = server_func(clients, None, None, args, device, trainer)
+        server = server_func(clients, None, None, args, device, trainer, eval_loader)
         server.run()
 
         save_dir = os.path.join(args.cache_dir, "model", args.fl_algorithm)
