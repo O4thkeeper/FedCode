@@ -44,7 +44,7 @@ if __name__ == "__main__":
                                                                              args.train_partition_file)
         eval_loader = None
         if args.do_eval:
-            manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
+            eval_loader = manager.load_federated_data(True, 'eval', args.eval_data_file, args.eval_batch_size)
 
         fl_algorithm = get_fl_algorithm_initializer(args.fl_algorithm)
         server_func = fl_algorithm(server=True)
