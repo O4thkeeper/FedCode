@@ -56,7 +56,7 @@ class CodeSearchTrainer:
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler = self.build_optimizer(self.model, iteration_in_total)
 
-        logging.info("***** Running training *****")
+        # logging.info("***** Running training *****")
 
         # global_step = args.start_step
         args = self.args
@@ -182,8 +182,8 @@ class CodeSearchTrainer:
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
         # self.args.warmup_steps = warmup_steps if self.args.warmup_steps == 0 else self.args.warmup_steps
-        logging.info("warmup steps = %d" % warmup_steps)
-        self.freeze_model_parameters(model)
+        # logging.info("warmup steps = %d" % warmup_steps)
+        # self.freeze_model_parameters(model)
         optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
         # logging.info('warmup steps:%d' % warmup_steps)
         scheduler = get_linear_schedule_with_warmup(

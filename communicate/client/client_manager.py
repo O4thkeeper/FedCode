@@ -10,8 +10,7 @@ class ClientManager:
         model_params_list = []
         sample_num_list = []
         for index in client_indexes:
-
-            logging.info('client %d ready to train:' % (index))
+            logging.info('***** train client %d *****' % index)
 
             model_params, local_sample_num = self.trainer.train(index, current_model)
             model_params_list.append(model_params)
