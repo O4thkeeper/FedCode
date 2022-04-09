@@ -24,7 +24,7 @@ def format_str(string):
 
 def process_data_and_test(test_raw_examples, test_model, preprocessor, args, test_batch_size=1000):
     idxs = np.arange(len(test_raw_examples))
-    data = np.array(test_raw_examples, dtype=np.object)
+    data = np.array(test_raw_examples, dtype=object)
 
     np.random.shuffle(idxs)
     data = data[idxs]

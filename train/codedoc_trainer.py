@@ -3,9 +3,10 @@ import math
 import os
 
 import torch
+from torch.optim import AdamW
 from tqdm import tqdm
 import numpy as np
-from transformers import get_linear_schedule_with_warmup, AdamW
+from transformers import get_linear_schedule_with_warmup
 
 from utils import bleu
 from utils.model_utils import copy_state_dict

@@ -3,9 +3,10 @@ import math
 import os
 
 import torch
+from torch.optim import AdamW
 from tqdm import tqdm
 import numpy as np
-from transformers import get_linear_schedule_with_warmup, AdamW
+from transformers import get_linear_schedule_with_warmup
 
 from utils.evaluate_utils import compute_metrics
 from utils.model_utils import copy_state_dict
@@ -177,7 +178,7 @@ class CodeSearchTrainer:
         eval_loss = eval_loss / nb_eval_steps
         preds_label = np.argmax(preds, axis=1)
         result = compute_metrics(preds_label, out_label_ids)
-        logging.info("evaluation result { loss: %s; acc: %s; f1: %s" % (eval_loss, result['acc'], result['f1']))
+        logging.info("evaluation result { loss: %s; acc: %s; f1: %s }" % (eval_loss, result['acc'], result['f1']))
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
