@@ -22,13 +22,15 @@ def train(model, train_loader, eval_loader, args, device):
     model.zero_grad()
     model.train()
 
+    check = [i for i in range(len(train_loader) - 1, -1, -int(len(train_loader) / 8))][:8]
+    logging.info("eval point:%s" % check)
+    eval_result_list = []
+
     for idx in range(args.epochs):
         logging.info('epoch %s begin' % idx)
         log_loss = 0.0
         step = 0
-        loss_list = []
         bar = tqdm(train_loader, total=len(train_loader))
-        check = [i for i in range(len(train_loader) - 1, -1, -int(len(train_loader) / 8))][:8]
         for batch in bar:
 
             batch = tuple(t.to(device) for t in batch)
@@ -53,11 +55,11 @@ def train(model, train_loader, eval_loader, args, device):
                 model.zero_grad()
 
             if step in check:
-                eval_loss = eval(model, eval_loader, args, device)
-                loss_list.append(eval_loss)
+                eval_result = eval(model, eval_loader, args, device)
+                eval_result_list.append(eval_result)
             step += 1
-        logging.info("loss with check point %s : %s" % (check, loss_list))
         logging.info("epoch %s loss = %s" % (idx, log_loss / step))
+    logging.info("eval result: %s" % eval_result_list)
 
 
 def eval(model, eval_loader, args, device):
@@ -90,7 +92,7 @@ def eval(model, eval_loader, args, device):
     eval_loss = eval_loss / nb_eval_steps
     preds_label = np.argmax(preds, axis=1)
     result = compute_metrics(preds_label, out_label_ids)
-    logging.info("evaluation result { loss: %s; acc: %s; f1: %s" % (eval_loss, result['acc'], result['f1']))
+    logging.info("evaluation result { loss: %s; acc: %s; f1: %s }" % (eval_loss, result['acc'], result['f1']))
     model.train()
     return eval_loss, result['acc'], result['f1']
 

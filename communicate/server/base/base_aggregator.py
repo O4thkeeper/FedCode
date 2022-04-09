@@ -20,7 +20,7 @@ class BaseAggregator(ABC):
             num_clients = min(client_num_per_round, client_num_in_total)
             # np.random.seed(round_idx)
             client_indexes = np.random.choice(range(client_num_in_total), num_clients, replace=False)
-        logging.info("client_indexes = %s" % str(client_indexes))
+        # logging.info("client_indexes = %s" % str(client_indexes))
         return client_indexes
 
     @abstractmethod
