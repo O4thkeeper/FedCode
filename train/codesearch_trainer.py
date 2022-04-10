@@ -57,9 +57,6 @@ class CodeSearchTrainer:
         iteration_in_total = len(self.train_dl) // self.args.gradient_accumulation_steps * self.args.epochs
         optimizer, scheduler = self.build_optimizer(self.model, iteration_in_total)
 
-        # logging.info("***** Running training *****")
-
-        # global_step = args.start_step
         args = self.args
         global_step = 0
         tr_loss = 0.0
@@ -92,7 +89,7 @@ class CodeSearchTrainer:
                 log_loss += loss.item()
                 if (step + 1) % self.args.gradient_accumulation_steps == 0:
                     optimizer.step()
-                    scheduler.step()  # Update learning rate schedule
+                    scheduler.step()
                     self.model.zero_grad()
                     global_step += 1
 
@@ -107,42 +104,6 @@ class CodeSearchTrainer:
         self.model.cpu()
 
         return global_step, tr_loss / global_step
-
-    def test(self):
-        self.model.to(self.device)
-        # for acc test
-        logging.info("***** Running Test *****")
-        preds = None
-        out_label_ids = None
-        for batch in tqdm(self.test_dl, desc="Testing"):
-            self.model.eval()
-            batch = tuple(t.to(self.device) for t in batch)
-
-            with torch.no_grad():
-                inputs = {'input_ids': batch[0],
-                          'attention_mask': batch[1],
-                          'token_type_ids': batch[2] if self.args.model_type in ['bert', 'xlnet'] else None,
-                          # XLM don't use segment_ids
-                          'labels': batch[3]}
-
-                outputs = self.model(**inputs)
-                _, logits = outputs[:2]
-            if preds is None:
-                preds = logits.detach().cpu().numpy()
-                out_label_ids = inputs['labels'].detach().cpu().numpy()
-            else:
-                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-                out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-        preds_label = np.argmax(preds, axis=1)
-        result = compute_metrics(preds_label, out_label_ids)
-        if not os.path.exists(self.args.output_dir):
-            os.makedirs(self.args.output_dir)
-        output_test_file = os.path.join(self.args.output_dir, "test_results.txt")
-        with open(output_test_file, "a+") as writer:
-            logging.info("***** Test results {} *****")
-            for key in sorted(result.keys()):
-                logging.info("  %s = %s", key, str(result[key]))
-                writer.write("%s = %s\n" % (key, str(result[key])))
 
     def eval(self):
         self.model.to(self.device)
@@ -174,7 +135,6 @@ class CodeSearchTrainer:
             else:
                 preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
                 out_label_ids = np.append(out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
-        # eval_accuracy = accuracy(preds,out_label_ids)
         eval_loss = eval_loss / nb_eval_steps
         preds_label = np.argmax(preds, axis=1)
         result = compute_metrics(preds_label, out_label_ids)
@@ -182,30 +142,23 @@ class CodeSearchTrainer:
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
-        # self.args.warmup_steps = warmup_steps if self.args.warmup_steps == 0 else self.args.warmup_steps
         # logging.info("warmup steps = %d" % warmup_steps)
-        # self.freeze_model_parameters(model)
+        self.freeze_model_parameters(model)
         optimizer = AdamW(model.parameters(), lr=self.args.learning_rate, eps=self.args.adam_epsilon)
-        # logging.info('warmup steps:%d' % warmup_steps)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=warmup_steps, num_training_steps=iteration_in_total
         )
         return optimizer, scheduler
 
     def freeze_model_parameters(self, model):
-        modules = list()
         logging.info("freeze layers: %s" % str(self.freeze_layers))
-        for layer_idx in self.freeze_layers:
-            if layer_idx == "e":
-                modules.append(model.distilbert.embeddings)
-            else:
-                modules.append(model.distilbert.transformer.layer[int(layer_idx)])
-        for module in modules:
-            for param in module.parameters():
-                param.requires_grad = False
+        for name, param in model.named_parameters():
+            for freeze_layer in self.freeze_layers:
+                if freeze_layer in name:
+                    param.requires_grad = False
         logging.info(self.get_parameter_number(model))
 
-    def get_parameter_number(self, net):
-        total_num = sum(p.numel() for p in net.parameters())
-        trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    def get_parameter_number(self, model):
+        total_num = sum(p.numel() for p in model.parameters())
+        trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
         return {'Total': total_num, 'Trainable': trainable_num}

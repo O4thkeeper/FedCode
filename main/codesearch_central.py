@@ -100,10 +100,27 @@ def eval(model, eval_loader, args, device):
 def build_optimizer(model, iteration_in_total, args):
     warmup_steps = math.ceil(iteration_in_total * args.warmup_ratio)
     logging.info("warmup steps = %d" % warmup_steps)
+    if args.freeze_layers:
+        freeze_model_parameters(args.freeze_layers.split(','), model)
     optimizer = AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps,
                                                 num_training_steps=iteration_in_total)
     return optimizer, scheduler
+
+
+def freeze_model_parameters(freeze_layers, model):
+    logging.info("freeze layers: %s" % str(freeze_layers))
+    for name, param in model.named_parameters():
+        for freeze_layer in freeze_layers:
+            if freeze_layer in name:
+                param.requires_grad = False
+    logging.info(get_parameter_number(model))
+
+
+def get_parameter_number(model):
+    total_num = sum(p.numel() for p in model.parameters())
+    trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return {'Total': total_num, 'Trainable': trainable_num}
 
 
 if __name__ == "__main__":

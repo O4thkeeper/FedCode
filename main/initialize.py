@@ -49,7 +49,7 @@ def add_code_search_args(parser):
 
     parser.add_argument('--server_data', type=str, default='')
 
-    parser.add_argument('--partition_method', type=str,default='')
+    parser.add_argument('--partition_method', type=str, default='')
 
     parser.add_argument('--model_type', type=str, default='roberta-base')
 
