@@ -68,7 +68,7 @@ def eval(model, eval_loader, args, device):
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-    for batch in tqdm(eval_loader, desc="Evaluating"):
+    for batch in eval_loader:
         model.eval()
         batch = tuple(t.to(device) for t in batch)
 
