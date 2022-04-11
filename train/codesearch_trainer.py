@@ -113,7 +113,7 @@ class CodeSearchTrainer:
         nb_eval_steps = 0
         preds = None
         out_label_ids = None
-        for batch in tqdm(self.valid_dl, desc="Evaluating"):
+        for batch in self.valid_dl:
             self.model.eval()
             batch = tuple(t.to(self.device) for t in batch)
 
