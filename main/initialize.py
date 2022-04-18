@@ -209,6 +209,8 @@ def add_code_doc_args(parser):
 
     parser.add_argument('--cache_dir', type=str, default="cache/")
 
+    parser.add_argument('--freeze_layers', type=str, default='')
+
     parser.add_argument('--do_train', action="store_true")
 
     parser.add_argument('--do_eval', action="store_true")

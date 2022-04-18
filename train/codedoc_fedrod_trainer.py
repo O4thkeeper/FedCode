@@ -26,6 +26,8 @@ class CodeDocFedRodTrainer:
         self.p_head_state_list = p_head_state_list
         self.vocab_weight_list = vocab_weight_list
 
+        self.freeze_layers = args.freeze_layers.split(",") if args.freeze_layers else []
+
     def set_data(self, train_dl=None, valid_dl=None, test_dl=None):
         if train_dl is not None:
             self.train_dl = train_dl
@@ -207,7 +209,8 @@ class CodeDocFedRodTrainer:
 
     def build_optimizer(self, model, iteration_in_total):
         args = self.args
-        warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)
+        self.freeze_model_parameters(model)
+        warmup_steps = math.ceil(iteration_in_total * args.warmup_ratio)
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
             {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
@@ -220,3 +223,17 @@ class CodeDocFedRodTrainer:
                                                     num_training_steps=iteration_in_total)
 
         return optimizer, scheduler
+
+    def freeze_model_parameters(self, model):
+        if len(self.freeze_layers) > 0:
+            logging.info("freeze layers: %s" % str(self.freeze_layers))
+            for name, param in model.named_parameters():
+                for freeze_layer in self.freeze_layers:
+                    if freeze_layer in name:
+                        param.requires_grad = False
+        logging.info(self.get_parameter_number(model))
+
+    def get_parameter_number(self, model):
+        total_num = sum(p.numel() for p in model.parameters())
+        trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        return {'Total': total_num, 'Trainable': trainable_num}

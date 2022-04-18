@@ -35,7 +35,6 @@ if __name__ == "__main__":
         model = model_class.from_pretrained(args.model_name, config=config)
         model.to(device)
 
-        # data
         preprocessor = CodeSearchPreprocessor(args, tokenizer)
         manager = CodeSearchDataManager(args, preprocessor)
 
