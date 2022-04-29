@@ -191,7 +191,7 @@ def bleuFromMaps(m1, m2):
     all_score = []
     score = []
     data = []
-    num = 0.0
+    num = 0
 
     for key in m1:
         if key in m2:
