@@ -9,7 +9,8 @@ from transformers import RobertaConfig, RobertaTokenizer, RobertaModel
 from data.manager.codedoc_data_manager import CodeDocDataManager
 from data.preprocess.codedoc_preprocessor import CodeDocPreprocessor
 from main.initialize import set_seed, get_fl_algorithm_initializer, add_code_doc_args
-from model.seq2seq_model import Seq2Seq
+from model.biseq2seq_model import Seq2Seq
+
 from test.codedoc_trainer_for_test import CodeDocTrainer
 
 if __name__ == "__main__":
