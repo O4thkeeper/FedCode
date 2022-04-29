@@ -8,11 +8,6 @@ data/store/*
 tmp/*
 
 *.pyc
-./*/*.pyc
-./*/*/*.pyc
-./*/*/*/*.pyc
-./*/*/*/*/*.pyc
-./*/*/*/*/*/*.pyc
 
 *.log
 
@@ -27,5 +22,3 @@ tmp/*
 *.zip
 *.json
 *.png
-
-test.py
