@@ -38,7 +38,7 @@ if __name__ == "__main__":
     decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
     model = Seq2Seq(encoder=encoder, decoder=decoder, config=config,
                     beam_size=args.beam_size, max_length=args.max_target_length,
-                    sos_id=tokenizer.cls_token_id, eos_id=tokenizer.sep_token_id)
+                    sos_id=tokenizer.cls_token_id, eos_id=tokenizer.sep_token_id, p_head=True)
 
     preprocessor = CodeDocPreprocessor(args=args, tokenizer=tokenizer)
     manager = CodeDocDataManager(args, preprocessor)
