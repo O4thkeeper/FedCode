@@ -139,7 +139,7 @@ class CodeSearchTrainer:
         preds_label = np.argmax(preds, axis=1)
         result = compute_metrics(preds_label, out_label_ids)
         logging.info("evaluation result { loss: %s; acc: %s; f1: %s }" % (eval_loss, result['acc'], result['f1']))
-        return False if self.args.acc_base > result['acc'] else True
+        return self.args.acc_base < result['acc']
 
     def build_optimizer(self, model, iteration_in_total):
         warmup_steps = math.ceil(iteration_in_total * self.args.warmup_ratio)

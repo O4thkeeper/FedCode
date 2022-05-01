@@ -40,4 +40,4 @@ class FedAVGAggregator(BaseAggregator):
         self.trainer.test()
 
     def eval_global_model(self):
-        self.trainer.eval()
+        return self.trainer.eval()
