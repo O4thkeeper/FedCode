@@ -25,7 +25,10 @@ class FedAVGServerManager():
             gc.collect()
 
             if self.args.do_eval:
-                self.aggregator.eval_global_model()
+                stop = self.aggregator.eval_global_model()
+                if stop:
+                    logging.info("reach acc base at round %s" % round)
+                    break
 
     def test(self):
         self.aggregator.test_on_server()
