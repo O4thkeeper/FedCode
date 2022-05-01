@@ -18,7 +18,7 @@ def main():
     client_num = args.client_number
 
     file_length = int(subprocess.getoutput("wc -l %s" % args.data_file).split()[0])
-    index_list = [i for i in range((file_length - 1) // client_num * client_num)]
+    index_list = [i for i in range((file_length // client_num + 1) * client_num)]
     print("file length:%s" % file_length)
     partition_result = []
     random.shuffle(index_list)

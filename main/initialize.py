@@ -107,7 +107,7 @@ def add_code_search_args(parser):
 
     parser.add_argument('--do_test', action="store_true")
 
-    parser.add_argument('--acc_base', type=float, default=100.0)
+    parser.add_argument('--acc_base', type=float, default=1.0)
 
     return parser
 
